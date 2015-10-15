@@ -17,10 +17,12 @@ int main(void)
 int scodes(int a)
 {
     if(a>='a'&& a<='z'){
-       return(a+('z'-a)-(a-'a'));
+      /*---[ a+('z'-a)-(a-'a') ]--- Equivalent*/
+       return('z'-(a-'a'));
     }
     else if(a>='A'&& a<='Z'){
-           return(a+('Z'-a)-(a-'A'));
+      /*---[ a+('Z'-a)-(a-'A') ]--- Equivalent*/
+           return('Z'-(a-'A'));
         }
     else{return(a);}
 }
