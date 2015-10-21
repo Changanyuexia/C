@@ -16,6 +16,35 @@ int main(int argc, char **argv)
 
 int romanToArabic( char *roman )
 {
+   int i=0;
+   if(*roman=='M'||*roman=='m'){
+      i=1000;
+      roman++;
+      printf("%c\n",*roman );
+      if(*roman=='D'||*roman=='d'){
+        i+=500;
+      roman++;
+      }
+      if(*roman=='C'||*roman=='c'){
+        i+=100;
+      }
+      return(i);
+   }
+   if(*roman=='D'||*roman=='d'){
+      i=500;
+   }
+   if(*roman=='C'||*roman=='c'){
+      i=100;
+   }
+   if(*roman=='L'||*roman=='l'){
+      i=50;
+   }
+   if(*roman=='X'||*roman=='x'){
+      i=10;
+   }
+   if(*roman=='V'){
+      i=5;
+   }
 
-   return(1);
+   return(i);
 }
