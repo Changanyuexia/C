@@ -1,9 +1,10 @@
 #include <stdio.h>
+#include <stdlib.h>
 
-#define HEIGHT 25
-#define WIDTH  25
+#define HEIGHT             25
+#define WIDTH              30
 #define AREA HEIGHT*WIDTH
-#define MAX_FILE 120
+#define MAX_FILE          120
 
 void fFillArray(int *p,FILE *fp);
 void zFillArray(int *p);
@@ -11,9 +12,11 @@ void printArray(int *p);
 void putAsses(int *p);
 void nextStep(int *p, int *q);
 
+
+
 int main (int argc, char **argv)
 {
-   int i=1;
+   int i=1,iNum;
    int a[HEIGHT][WIDTH], b[HEIGHT][WIDTH];
    char *fName, *iter;
    int *p, *q;
@@ -21,7 +24,8 @@ int main (int argc, char **argv)
   if( argc==3 ){
      fName=argv[1];
      iter=argv[2];
-     printf("Your agv input is %s\n%d\n%d\n", argv[1],iter[1]-38,iter[2]);
+     sscanf(iter, "%d",&iNum);
+     printf("Your agv input is %s\n%d\n%d\n", argv[1],iNum,iter[2]);
    fp= fopen(fName, "r");
    p=a[0];
    q=b[0];
@@ -35,13 +39,16 @@ int main (int argc, char **argv)
    printf("ARRAY A\n");
    printArray(p);
      p=a[0];
-     while(i<=iter[1]-38){
+     while(i<=iNum){
    /*WHERE THE ARRAY PROCESS HAPPENS*/
+sleep(1);
    nextStep(p,q);
    printf("ARRAY [%d]\n",i);
    printArray(q);
      q=b[0];
+
    /*WHERE THE ARRAY PROCESS HAPPENS--again*/
+sleep(1);
    nextStep(q,p);
      p=a[0];
      q=b[0];
@@ -69,7 +76,7 @@ void nextStep(int *p, int *q)
                  break;
             }
             break;
-          
+
         case 1:
            switch (*(p+1)+*(p-1)+ *(p-HEIGHT)+ *(p+HEIGHT)+
            *(p-HEIGHT-1)+ *(p+HEIGHT-1)+ *(p-HEIGHT+1)+ *(p+HEIGHT+1)){
@@ -101,7 +108,7 @@ void printArray(int *p)
 
      printf("%d",*p++ );
 
-     if((i+1)%WIDTH==0){printf("\n");}
+     if((i+1)%HEIGHT==0){printf("\n");}
   }
      printf("\n\n" );
 
@@ -119,7 +126,7 @@ void fFillArray(int *p,FILE *fp)
 {
    int i,x,y;
    for(i=0;i<14;i++){
-      if(fscanf(fp,"%d%d",&x,&y)!=2){
+      if(fscanf(fp,"%d%d",&y,&x)!=2){
          printf("ERRORGRANERROR\n");
       }
       *(p+(x-1)+HEIGHT*(y-1))=1;
