@@ -2,9 +2,10 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
+#include <unistd.h>
 
-#define HEIGHT                      10
-#define WIDTH                       30
+#define HEIGHT                      90
+#define WIDTH                       150
 #define TEAM_ONE                     1
 #define TEAM_TWO                    10
 #define DEAD_CELL                    0
@@ -12,7 +13,7 @@
 #define W                    (WIDTH-1)
 #define AREA            (HEIGHT*WIDTH)
 #define MAX_FILE                   120
-#define SLEEP_T               50000000
+#define SLEEP_T               500000000
 #define POINTS                     100
 #define TEAM_ONE_TWO      (2*TEAM_ONE)
 #define TEAM_ONE_THREE    (3*TEAM_ONE)
@@ -78,12 +79,12 @@ int main (int argc, char **argv)
    printf("reaches printfirstarray" );
    printf("ARRAY A\n");
    printf("reches hanfle while loop\n");
-   printArrayz(a.self);
+   /*printArrayz(a.self);*/
      while(i<=iNum){
    /*WHERE THE ARRAY PROCESS HAPPENS*/
-   mySleep(3);
+   mySleep(50000000);
    nextStep2(a.self,b.self,b.sum);
-   printArray(b.sum);
+   /*printArray(b.sum);*/
    printf("ARRAY [%d]\n",i);
    printArrayz(b.self);
    arraySum(b.self,TEAM_ONE);
@@ -198,14 +199,14 @@ void printArrayz(int p[HEIGHT][WIDTH])
 }
 int fFillArray(int p[HEIGHT][WIDTH],FILE *fp, int a)
 {
-   int temp, i,x,y,xOrigin,yOrigin,xFin,yFin;
+   int i,x,y,xOrigin,yOrigin,xFin,yFin;
 srand((unsigned) time(&t)+rand());
    xOrigin=rand()%WIDTH;
    yOrigin=rand()%HEIGHT;
    fscanf(fp,"#Life1.06");
-   printf("%d\n",temp);
    for(i=0;i<POINTS;i++){
            printArrayz(p);
+           mySleep(500000);
       if(fscanf(fp,"%d%d",&x,&y)!=2){
          printf("EOF\n");
          return(1);
@@ -274,8 +275,11 @@ void arrayCopy(int p[HEIGHT][WIDTH], int q[HEIGHT][WIDTH])
 }
 void mySleep(int a)
 {
-   int i;
-      for(i=0;i<a*SLEEP_T;i++){}
+   int i,j;
+      for(i=0;i<a*SLEEP_T;){
+      j=i+1;
+        i=j;
+    }
 }
 /*void nextStep(int p[HEIGHT][WIDTH], int q[HEIGHT][WIDTH], int sum[HEIGHT][WIDTH])
 {
