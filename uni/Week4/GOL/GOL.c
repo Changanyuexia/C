@@ -5,7 +5,7 @@
 #include <unistd.h>
 
 #define HEIGHT                      90
-#define WIDTH                       150
+#define WIDTH                       100
 #define TEAM_ONE                     1
 #define TEAM_TWO                    10
 #define DEAD_CELL                    0
@@ -13,7 +13,7 @@
 #define W                    (WIDTH-1)
 #define AREA            (HEIGHT*WIDTH)
 #define MAX_FILE                   120
-#define SLEEP_T               500000000
+#define SLEEP_T                11000000
 #define POINTS                     100
 #define TEAM_ONE_TWO      (2*TEAM_ONE)
 #define TEAM_ONE_THREE    (3*TEAM_ONE)
@@ -82,7 +82,7 @@ int main (int argc, char **argv)
    /*printArrayz(a.self);*/
      while(i<=iNum){
    /*WHERE THE ARRAY PROCESS HAPPENS*/
-   mySleep(50000000);
+   mySleep(2);
    nextStep2(a.self,b.self,b.sum);
    /*printArray(b.sum);*/
    printf("ARRAY [%d]\n",i);
@@ -111,37 +111,37 @@ void nextStep2(int p[HEIGHT][WIDTH], int q[HEIGHT][WIDTH], int sum[HEIGHT][WIDTH
       for(i=0;i<HEIGHT;i++){
          for(j=0;j<WIDTH;j++){
             sum[i][j] = sumSpecial(i,j,p);
-               switch (p[i][j]) {
-                  case DEAD_CELL:
-                     if(sum[i][j] == TEAM_ONE_THREE){
-                        q[i][j]=TEAM_ONE;
-                     }
-                     else if(sum[i][j] == TEAM_TWO_THREE){
-                        q[i][j]=TEAM_TWO;
-                     }
-                     else{
-                        q[i][j]=DEAD_CELL;
-                     }
-                     break;
-                  case TEAM_ONE:
-                     if (sum[i][j]==TEAM_ONE_TWO||sum[i][j]==TEAM_ONE_THREE){
-                        q[i][j]=TEAM_ONE;
-                     }
-                     else{
-                        q[i][j]=DEAD_CELL;
-                     }
-                     break;
-                  case TEAM_TWO:
-                     if (sum[i][j]==TEAM_TWO_TWO||sum[i][j]==TEAM_TWO_THREE){
-                        q[i][j]=TEAM_TWO;
-                     }
-                     else{
-                        q[i][j]=DEAD_CELL;
-                     }
-                     break;
-              }
-        }
+            switch (p[i][j]) {
+               case DEAD_CELL:
+                  if(sum[i][j] == TEAM_ONE_THREE || sum[i][j] == (TEAM_ONE_TWO + TEAM_TWO)){
+                     q[i][j]=TEAM_ONE;
+                  }
+                  else if(sum[i][j] == TEAM_TWO_THREE || sum[i][j] == (TEAM_ONE + TEAM_TWO_TWO)){
+                     q[i][j]=TEAM_TWO;
+                  }
+                  else{
+                     q[i][j]=DEAD_CELL;
+                  }
+                  break;
+               case TEAM_ONE:
+                  if (sum[i][j]==TEAM_ONE_TWO||sum[i][j]==TEAM_ONE_THREE){
+                     q[i][j]=TEAM_ONE;
+                  }
+                  else{
+                     q[i][j]=DEAD_CELL;
+                  }
+                  break;
+               case TEAM_TWO:
+                  if (sum[i][j]==TEAM_TWO_TWO||sum[i][j]==TEAM_TWO_THREE){
+                     q[i][j]=TEAM_TWO;
+                  }
+                  else{
+                     q[i][j]=DEAD_CELL;
+                  }
+                  break;
+           }
      }
+  }
 }
 void zFillArray(int p[HEIGHT][WIDTH])
 {
@@ -186,11 +186,11 @@ void printArrayz(int p[HEIGHT][WIDTH])
    int j,i;
    printBoardX();
       for(i=0;i<HEIGHT;i++){
-         printf("%3d",i+1 );
+         printf("%2d",i+1 );
          for(j=0;j<WIDTH;j++){
-            if(p[i][j]==DEAD_CELL){printf(" ' ");}
-            if(p[i][j]==TEAM_ONE){printf (" * ");}
-            if(p[i][j]==TEAM_TWO){printf (" X ");}
+            if(p[i][j]==DEAD_CELL){printf("  ");}
+            if(p[i][j]==TEAM_ONE){printf (" *");}
+            if(p[i][j]==TEAM_TWO){printf (" X");}
          }
          printf("\n");
       }
@@ -203,10 +203,10 @@ int fFillArray(int p[HEIGHT][WIDTH],FILE *fp, int a)
 srand((unsigned) time(&t)+rand());
    xOrigin=rand()%WIDTH;
    yOrigin=rand()%HEIGHT;
-   fscanf(fp,"#Life1.06");
+   fscanf(fp,"#Life 1.06");
    for(i=0;i<POINTS;i++){
-           printArrayz(p);
-           mySleep(500000);
+          /* printArrayz(p);
+           mySleep(500000);*/
       if(fscanf(fp,"%d%d",&x,&y)!=2){
          printf("EOF\n");
          return(1);
