@@ -6,10 +6,14 @@ the accumulative score of 50 games and decides the winner  */
 #include <stdlib.h>
 #include <time.h>
 
+#include "neillsdl2.h"
+
+#define RECTSIZE                  2
+#define MILLISECONDDELAY         10
 #define PREFIX             "#Life 1.06"
-#define HEIGHT                      90
-#define WIDTH                      150
-#define TOTAL_GAMES                 50
+#define HEIGHT                     576/RECTSIZE
+#define WIDTH                      768/RECTSIZE
+#define TOTAL_GAMES                 1
 /* I assign team one number 1 and team two number 10
 so that the sumNeighbour switch doesn't get clashing cases*/
 #define TEAM_ONE                     1
@@ -31,6 +35,7 @@ int  sumNeighbours(int i, int j, int p[HEIGHT][WIDTH]);
 int  overspill(int coordinate, int max);
 int  scoreSum(int p [HEIGHT][WIDTH], int team);
 void scorePrint(int scoreP1, int scoreP2, int games);
+int draw(int board[HEIGHT][WIDTH], SDL_Simplewin sw, SDL_Rect rectangle);
 
 struct life {
    int self[HEIGHT][WIDTH], sum[HEIGHT][WIDTH];
@@ -43,6 +48,12 @@ int main (int argc, char **argv)
    int scoreP1 =0, scoreP2 =0;
    char *fName1, *fName2;
    FILE *player1, *player2;
+
+      SDL_Simplewin sw;
+      SDL_Rect rectangle;
+      rectangle.w = RECTSIZE;
+      rectangle.h = RECTSIZE;
+
    if( argc == 3 ){
       fName1 = argv[1];
       fName2 = argv[2];
@@ -51,6 +62,7 @@ int main (int argc, char **argv)
       printf("Unable to input your 'arguments'\n");
       return(0);
    }
+      Neill_SDL_Init(&sw);
    while (games<TOTAL_GAMES){
       zeroFillArray(boardA.self);
       zeroFillArray(boardB.self);
@@ -66,21 +78,86 @@ int main (int argc, char **argv)
          i += fileFillBoard(boardA.self, player2, TEAM_TWO);
          fclose(player2);
       }
+      /* Has anyone pressed ESC or killed the SDL window ?
+         Must be called frequently - it's the only way of escaping */
+
       i = 0;
+draw(boardA.self , sw, rectangle);
       /*WHERE THE WAR HAPPENS*/
-      while(i < GENERATIONS){
+      while(i < GENERATIONS && !sw.finished){
          /*Instead of copying the board to a temporary
          array it oscilates between two boards--FASTER */
          nextStep(boardA.self, boardB.self, boardB.sum);
+
+draw(boardA.self , sw, rectangle);
+
          nextStep(boardB.self, boardA.self, boardA.sum);
+
+draw(boardA.self , sw, rectangle);
+               Neill_SDL_Events(&sw);
          i += 2;
       }
    scoreP1+=scoreSum(boardA.self, TEAM_ONE);
    scoreP2+=scoreSum(boardA.self, TEAM_TWO);
    scorePrint( scoreP1, scoreP2, games);
+   sw.finished=0;
    games++;
    }
+   atexit(SDL_Quit);
+   /* Clear up graphics subsystems */
    return(0);
+}
+void initial(void)
+{
+
+}
+int draw(int board[HEIGHT][WIDTH], SDL_Simplewin sw, SDL_Rect rectangle)
+{
+      int j,i;
+
+      /* Sleep for a short time */
+      SDL_Delay(MILLISECONDDELAY);
+
+
+      for(i=0;i<HEIGHT;i++){
+         for(j=0;j<WIDTH;j++){
+            if(board[i][j]==0){
+      /* Choose a random colour, a mixture of red, green and blue. */
+      Neill_SDL_SetDrawColour(&sw, 100, 100, 100);
+      /* Unfilled Rectangle, fixed size, random position */
+      rectangle.x = j*RECTSIZE;
+      rectangle.y = i*RECTSIZE;
+      SDL_RenderFillRect(sw.renderer, &rectangle);
+            }
+            else if(board[i][j]==TEAM_ONE){
+              Neill_SDL_SetDrawColour(&sw, 255,255,255);
+
+      /* Filled Rectangle, fixed size, random position */
+      rectangle.x = j*RECTSIZE;
+      rectangle.y = i*RECTSIZE;
+      SDL_RenderFillRect(sw.renderer, &rectangle);
+            }
+            else if(board[i][j]==TEAM_TWO){
+              Neill_SDL_SetDrawColour(&sw, 0,0,0);
+
+      /* Filled Rectangle, fixed size, random position */
+      rectangle.x = j*RECTSIZE;
+      rectangle.y = i*RECTSIZE;
+      SDL_RenderFillRect(sw.renderer, &rectangle);
+            }
+                                   }
+                                 }
+
+
+      /* Update window - no graphics appear on some devices until this is finished */
+      SDL_RenderPresent(sw.renderer);
+      SDL_UpdateWindowSurface(sw.win);
+
+
+
+
+   return 0;
+
 }
 /*FUNCTIONS*/
 void scorePrint(int scoreP1, int scoreP2, int games)
@@ -120,20 +197,19 @@ int fileFillBoard(int p[HEIGHT][WIDTH],FILE *player, int team)
    srand((unsigned) time(&t)+rand());
    xOrigin = rand()%WIDTH;
    yOrigin = rand()%HEIGHT;
-   fscanf(player, PREFIX);
-   for(i=0; i<=POINTS; i++){
-      if(fscanf(player, "%d%d", &x, &y)!=2){
-         return(1);
-      }
-      xFin = overspill(xOrigin+x,WIDTH);
-      yFin = overspill(yOrigin+y,HEIGHT);
-      if(p[yFin][xFin] == DEAD_CELL){
-         p[yFin][xFin] = team;
-      }
-      else if(p[yFin][xFin] != DEAD_CELL){
-        return(0);
-      }
-   }
+      for(i=0; i<=POINTS; i++){
+         if(fscanf(player, "%d%d", &x, &y)!=2){
+            return(1);
+         }
+         xFin = overspill(xOrigin+x,WIDTH);
+         yFin = overspill(yOrigin+y,HEIGHT);
+         if(p[yFin][xFin] == DEAD_CELL){
+            p[yFin][xFin] = team;
+         }
+         else if(p[yFin][xFin] != DEAD_CELL){
+           return(0);
+         }
+     }
    return(1);
 }
 void nextStep(int cell[HEIGHT][WIDTH],

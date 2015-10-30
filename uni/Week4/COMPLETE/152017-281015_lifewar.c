@@ -2,9 +2,8 @@
 #include <stdlib.h>
 #include <time.h>
 
-#define SLEEP_T                11000000
-#define HEIGHT                      70
-#define WIDTH                      110
+#define HEIGHT                      90
+#define WIDTH                      150
 #define TOTAL_GAMES                 50
 #define TEAM_ONE                     1
 #define TEAM_TWO                    10
@@ -14,17 +13,13 @@
 #define W                      WIDTH-1
 #define AREA              HEIGHT*WIDTH
 #define MAX_FILE                   120
+#define SLEEP_T               50000000
 #define POINTS                     100
 #define TEAM_ONE_2          2*TEAM_ONE
 #define TEAM_ONE_3          3*TEAM_ONE
 #define TEAM_TWO_2          2*TEAM_TWO
 #define TEAM_TWO_3          3*TEAM_TWO
 
-void printBoardX(void);
-void printArray(int p[HEIGHT][WIDTH]);
-void printArrayz(int p[HEIGHT][WIDTH]);
-void mySleep(int a);
-/*last version*/
 void arrayCopy(int p[HEIGHT][WIDTH], int q[HEIGHT][WIDTH]);
 int arraySum(int p [HEIGHT][WIDTH], int team);
 /*Seeds the board from a file    */
@@ -67,10 +62,11 @@ int main (int argc, char **argv)
       while(i<2){
          i=0;
          player1= fopen(fName1, "r");
-         zeroFillArray(board.self);
+         zeroFillArraySmart(board.self,TEAM_ONE);
          i+=fileFillBoard(board.self, player1, TEAM_ONE);
          fclose(player1);
          player2= fopen(fName2, "r");
+         zeroFillArraySmart(board.self,TEAM_TWO);
          i+=fileFillBoard(board.self, player2, TEAM_TWO);
          fclose(player2);
       }
@@ -79,8 +75,6 @@ int main (int argc, char **argv)
       while(i<=GENERATIONS){
          nextStep(board.self,temporary.self,temporary.sum);
          arrayCopy(temporary.self,board.self);
-         printArrayz(temporary.self);
-         mySleep(2);
          i++;
       }
       i=0;
@@ -234,50 +228,4 @@ void arrayCopy(int p[HEIGHT][WIDTH], int q[HEIGHT][WIDTH])
          q[i][j]=p[i][j];
       }
    }
-}
-void printArray(int p[HEIGHT][WIDTH])
-{
-   int j,i;
-      for(i=0;i<HEIGHT;i++){
-         for(j=0;j<WIDTH;j++){
-            printf("%3d",p[i][j]);
-         }
-printf("\n" );
-      }
-   printf("\n\n" );
-
-}
-
-void printArrayz(int p[HEIGHT][WIDTH])
-{
-   int j,i;
-   printBoardX();
-      for(i=0;i<HEIGHT;i++){
-         printf("%2d",i+1 );
-         for(j=0;j<WIDTH;j++){
-            if(p[i][j]==DEAD_CELL){printf("  ");}
-            if(p[i][j]==TEAM_ONE){printf (" *");}
-            if(p[i][j]==TEAM_TWO){printf (" X");}
-         }
-         printf("\n");
-      }
-   printf("\n\n" );
-
-}
-void printBoardX(void)
-{
-   int i;
-   printf("  ");
-   for(i=1;i<=WIDTH;i++){
-      printf("%3d",i);
-   }
-   printf("\n");
-}
-void mySleep(int a)
-{
-   int i,j;
-      for(i=0;i<a*SLEEP_T;){
-      j=i+1;
-        i=j;
-    }
 }

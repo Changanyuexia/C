@@ -1,27 +1,39 @@
+/*last version*/
 #include <stdio.h>
+#include <stdlib.h>
+#include <time.h>
+#include <unistd.h>
 
-#define HEIGHT             18
-#define WIDTH              40
-#define H            HEIGHT-1
-#define W             WIDTH-1
-#define AREA     HEIGHT*WIDTH
-#define MAX_FILE          120
-#define SLEEP_T      50000000
-#define POINTS            100
-/*#include "video.c"*/
+#define HEIGHT                      90
+#define WIDTH                       110
+#define TEAM_ONE                     1
+#define TEAM_TWO                    10
+#define DEAD_CELL                    0
+#define H                   (HEIGHT-1)
+#define W                    (WIDTH-1)
+#define AREA            (HEIGHT*WIDTH)
+#define MAX_FILE                   120
+#define SLEEP_T                11000000
+#define POINTS                     100
+#define TEAM_ONE_TWO      (2*TEAM_ONE)
+#define TEAM_ONE_THREE    (3*TEAM_ONE)
+#define TEAM_TWO_TWO      (2*TEAM_TWO)
+#define TEAM_TWO_THREE    (3*TEAM_TWO)
+
+time_t t;
 
 int sumSpecial(int i, int j, int p[HEIGHT][WIDTH]);
-void fFillArrayz(int p[HEIGHT][WIDTH],FILE *fp);
+int overspill(int i, int a);
+void zFillArraySmart(int p[HEIGHT][WIDTH], int player);
+void arrayCopy(int p[HEIGHT][WIDTH], int q[HEIGHT][WIDTH]);
+void arraySum(int p [HEIGHT][WIDTH],int a);
+int fFillArray(int p[HEIGHT][WIDTH],FILE *fp, int a);
 void zFillArray(int p[HEIGHT][WIDTH]);
-void zFillArrayz(int p[HEIGHT][WIDTH]);
 void printBoardX(void);
 void printArray(int p[HEIGHT][WIDTH]);
 void printArrayz(int p[HEIGHT][WIDTH]);
-void nextStep(int p[HEIGHT][WIDTH], int q[HEIGHT][WIDTH], int sum[HEIGHT][WIDTH]);
-void calculateNeighb(int p[HEIGHT][WIDTH], int upper[HEIGHT][WIDTH], int lower[HEIGHT][WIDTH],
-  int left[HEIGHT][WIDTH], int right[HEIGHT][WIDTH], int uRight[HEIGHT][WIDTH], int uLeft[HEIGHT][WIDTH]);
+void nextStep2(int p[HEIGHT][WIDTH], int q[HEIGHT][WIDTH], int sum[HEIGHT][WIDTH]);
 void mySleep(int a);
-
 
 struct life {
   int self[HEIGHT][WIDTH], left[HEIGHT][WIDTH], right[HEIGHT][WIDTH], upper[HEIGHT][WIDTH];
@@ -29,278 +41,290 @@ struct life {
   int lowerLeft[HEIGHT][WIDTH], lowerRigth[HEIGHT][WIDTH], sum[HEIGHT][WIDTH];
 };
 
-
 int main (int argc, char **argv)
 {
-   int i,j,iNum;
+   int i=0,iNum;
    struct life a;
    struct life b;
-   char *fName, *iter;
-   FILE *fp;
-
-      if( argc==3 ){
-         fName=argv[1];
-         iter=argv[2];
-         sscanf(iter, "%d",&iNum);
-         printf("Your agv input is %s\n%d\n%d\n", argv[1],iNum,iter[2]);
-      }
-      else{
-         printf("Your agv input is unknown");
-         return(0);
-      }
-   fp= fopen(fName, "r");
-   for(i=0;i<HEIGHT;i++){
-      for(j=0;j<WIDTH;j++){
-         a.self[i][j]=0;
-         b.self[i][j]=0;
-       }
+   char *fName1, *fName2, *iter;
+   FILE *fp1, *fp2;
+   if( argc==4 ){
+      fName1=argv[1];
+      fName2=argv[2];
+      iter=argv[3];
+      sscanf(iter, "%d",&iNum);
+      printf("Your agv input is %s\n%d\n%d\n", argv[1],iNum,iter[2]);
    }
-   fFillArrayz(a.self,fp);
-   fclose(fp);
-   printf("ARRAY A\n");
-   printArray(a.self);
+   else{
+      printf("Your agv input is unknown");
+      return(0);
+   }
+   zFillArray(a.self);
+   zFillArray(b.self);
+   while(i<2){
    i=0;
-     while(i<iNum){
+     fp1= fopen(fName1, "r");
+     printf("file1open\n");
+     fp2= fopen(fName2, "r");
+     printf("file2open\n");
+      zFillArraySmart(a.self,TEAM_ONE);
+   i+=fFillArray(a.self, fp1, TEAM_ONE);
+   fclose(fp1);
+   printf("file1close\n");
+      zFillArraySmart(a.self,TEAM_TWO);
+   i+=fFillArray(a.self, fp2, TEAM_TWO);
+      fclose(fp2);
+            printf("file2close\n");
+   }
+   printf("reaches printfirstarray" );
+   printf("ARRAY A\n");
+   printf("reches hanfle while loop\n");
+   /*printArrayz(a.self);*/
+     while(i<=iNum){
    /*WHERE THE ARRAY PROCESS HAPPENS*/
-mySleep(1);
-   calculateNeighb(a.self,b.upper,b.lower,b.left,b.right,b.upperRight,b.upperLeft);
-   printf("ARRAY [upper]\n");
-
-   printArray(b.upper);
-   printf("ARRAY [lower]\n");
-
-   printArray(b.lower);
-
-   printf("ARRAY [left]\n");
-
-   printArray(b.left);
-
-      printf("ARRAY [right]\n");
-
-      printArray(b.right);
-
-            printf("ARRAY [upperRight]\n");
-
-            printArray(b.upperRight);
-   nextStep(a.self,b.self,b.sum);
+   mySleep(2);
+   nextStep2(a.self,b.self,b.sum);
+   /*printArray(b.sum);*/
    printf("ARRAY [%d]\n",i);
    printArrayz(b.self);
+   arraySum(b.self,TEAM_ONE);
+   arraySum(b.self,TEAM_TWO);
+   arrayCopy(b.self,a.self);
    i++;
-}
+   }
 return(0);
-}
-void nextStep(int p[HEIGHT][WIDTH], int q[HEIGHT][WIDTH], int sum[HEIGHT][WIDTH])
+ }
+ void zFillArraySmart(int p[HEIGHT][WIDTH], int player)
+ {
+    int i,j;
+       for(i=0;i<HEIGHT;i++){
+          for(j=0;j<WIDTH;j++){
+             if(p[i][j]==player){
+                p[i][j]=0;
+             }
+          }
+       }
+ }
+void nextStep2(int p[HEIGHT][WIDTH], int q[HEIGHT][WIDTH], int sum[HEIGHT][WIDTH])
 {
    int j,i;
       for(i=0;i<HEIGHT;i++){
          for(j=0;j<WIDTH;j++){
-      sum[i][j] = sumSpecial(i,j,p);
-         switch (p[i][j]) {
-            case 0:
-               switch (sum[i][j]){
-                  case 3:
-                     q[i][j]=1;
-                     break;
-                  default:
-                     q[i][j]=0;
-                     break;
-               }
-               break;
-            case 1:
-               switch (sum[i][j]){
-                  case 2:
-                  case 3:
-                     q[i][j]=1;
-                     break;
-                  default:
-                     q[i][j]=0;
-                     break;
-               }
-           break;
-        }
+            sum[i][j] = sumSpecial(i,j,p);
+            switch (p[i][j]) {
+               case DEAD_CELL:
+                  if(sum[i][j] == TEAM_ONE_THREE || sum[i][j] == (TEAM_ONE_TWO + TEAM_TWO)){
+                     q[i][j]=TEAM_ONE;
+                  }
+                  else if(sum[i][j] == TEAM_TWO_THREE || sum[i][j] == (TEAM_ONE + TEAM_TWO_TWO)){
+                     q[i][j]=TEAM_TWO;
+                  }
+                  else{
+                     q[i][j]=DEAD_CELL;
+                  }
+                  break;
+               case TEAM_ONE:
+                  if (sum[i][j]==TEAM_ONE_TWO||sum[i][j]==TEAM_ONE_THREE){
+                     q[i][j]=TEAM_ONE;
+                  }
+                  else{
+                     q[i][j]=DEAD_CELL;
+                  }
+                  break;
+               case TEAM_TWO:
+                  if (sum[i][j]==TEAM_TWO_TWO||sum[i][j]==TEAM_TWO_THREE){
+                     q[i][j]=TEAM_TWO;
+                  }
+                  else{
+                     q[i][j]=DEAD_CELL;
+                  }
+                  break;
+           }
      }
-   }
+  }
 }
-
-void calculateNeighb(int p[HEIGHT][WIDTH], int upper[HEIGHT][WIDTH], int lower[HEIGHT][WIDTH],
-   int left[HEIGHT][WIDTH], int right[HEIGHT][WIDTH], int uRight[HEIGHT][WIDTH], int uLeft[HEIGHT][WIDTH])
+void zFillArray(int p[HEIGHT][WIDTH])
 {
    int i,j;
       for(i=0;i<HEIGHT;i++){
          for(j=0;j<WIDTH;j++){
-                 upper[i][j]=p[i-1][j];
-                 lower[i][j]=p[i+1][j];
-                 left[i][j]=p[i][j-1];
-                 right[i][j]=p[i][j+1];
-                 uLeft[i][j]=p[i-1][j-1];
-                 uRight[i][j]=p[i-1][j+1];
-            switch (i) {
-               case 0:
-                  upper[i][j]=p[H][j];
-                  uRight[i][j]=p[H][j+1];
-                     switch(j){
-                       case 0:
-                          left[i][j]=p[i][W];
-                          break;
-                       case W:
-                          right[i][j]=p[i][0];
-                          uRight[i][j]=p[H][0];
-                          break;
-                     }
-                  break;
-               case H:
-                 lower[i][j]=p[0][j];
-                 switch(j){
-                   case 0:
-
-                      left[i][j]=p[i][W];
-                      break;
-                   case W:
-                      right[i][j]=p[i][0];
-                      uRight[i][j]=p[i-1][0];
-                      break;
-                 }
-                 break;
-               default:
-               switch(j){
-                 case 0:
-
-                    left[i][j]=p[i][W];
-                    break;
-                 case W:
-                    right[i][j]=p[i][0];
-                    break;
-                 default:
-                    break;
-               }
-
-                  break;
-           }
+            p[i][j]=0;
          }
       }
 }
-void zFillArray(int p[HEIGHT][WIDTH])
-{
-  int i,j;
-     for(i=0;i<HEIGHT;i++){
-        for(j=0;j<WIDTH;j++){
-           p[i][j]=0;
-        }
-     }
-}
-
 void printArray(int p[HEIGHT][WIDTH])
 {
    int j,i;
-   printBoardX();
       for(i=0;i<HEIGHT;i++){
          for(j=0;j<WIDTH;j++){
-            printf("%2d",p[i][j]);
+            printf("%3d",p[i][j]);
          }
 printf("\n" );
       }
    printf("\n\n" );
 
 }
-
+void arraySum(int p[HEIGHT][WIDTH],int a)
+{
+  int i,j,sum=0;
+  for(i=0;i<HEIGHT;i++){
+     for(j=0;j<WIDTH;j++){
+        if(p[i][j]==a){
+        sum++;
+        }
+     }
+   }
+   if(a==TEAM_ONE){
+     printf("Team One Score: %d \n", sum);
+   }
+   if(a==TEAM_TWO){
+     printf("Team Two Score: %d \n", sum);
+   }
+}
 void printArrayz(int p[HEIGHT][WIDTH])
 {
    int j,i;
    printBoardX();
       for(i=0;i<HEIGHT;i++){
-printf("%d",i);
+         printf("%2d",i+1 );
          for(j=0;j<WIDTH;j++){
-            if(p[i][j]==0){printf("   ");}
-            if(p[i][j]==1){printf(" * ");}
+            if(p[i][j]==DEAD_CELL){printf("  ");}
+            if(p[i][j]==TEAM_ONE){printf (" *");}
+            if(p[i][j]==TEAM_TWO){printf (" X");}
          }
-printf("\n");
+         printf("\n");
       }
    printf("\n\n" );
 
 }
-
-void fFillArrayz(int p[HEIGHT][WIDTH],FILE *fp)
+int fFillArray(int p[HEIGHT][WIDTH],FILE *fp, int a)
 {
-   int i,x,y;
+   int i,x,y,xOrigin,yOrigin,xFin,yFin;
+srand((unsigned) time(&t)+rand());
+   xOrigin=rand()%WIDTH;
+   yOrigin=rand()%HEIGHT;
+   fscanf(fp,"#Life 1.06");
    for(i=0;i<POINTS;i++){
+          /* printArrayz(p);
+           mySleep(500000);*/
       if(fscanf(fp,"%d%d",&x,&y)!=2){
-         printf("ERRORGRANERROR\n");
+         printf("EOF\n");
+         return(1);
       }
-      p[y][x]=1;
+      printf("x0:%d\n",xOrigin+x+1 );
+      printf("y0:%d\n",yOrigin+y+1 );
+      xFin=overspill(xOrigin+x,WIDTH);
+      yFin=overspill(yOrigin+y,HEIGHT);
+
+      printf("reacheddeadcellcontol\n");
+      if(p[yFin][xFin]==DEAD_CELL){
+         p[yFin][xFin]=a;
+         printf("a[%d][%d] is dead\n",yFin+1,xFin+1 );
+      }
+      else if(p[yFin][xFin]!=DEAD_CELL){
+         printf("a[%d][%d] is dead\n",yFin+1,xFin+1 );
+        return(0);}
    }
+   return(1);
 }
 void printBoardX(void)
 {
    int i;
-   for(i=0;i<WIDTH;i++){
-      printf("%2d",i);
+   printf("  ");
+   for(i=1;i<=WIDTH;i++){
+      printf("%3d",i);
    }
    printf("\n");
 }
-
 int sumSpecial(int i, int j, int p[HEIGHT][WIDTH])
 {
-   int sum;
-   switch (i) {
-      case 0:
-         switch (j) {
-            case 0:
-               sum = p[i][j+1]+p[i][WIDTH-1]+       /*summing cells right-left  */
-               p[i+1][j]+p[HEIGHT-1][j]+       /*summing cells up-down     */
-               p[HEIGHT-1][j+1]+p[HEIGHT-1][WIDTH-1]+   /*summing cells right-left  */
-               p[i+1][j+1]+p[i+1][WIDTH-1];   /*summing cells right-left  */
-               break;
-            case WIDTH-1:
-               sum = p[i][0]+p[i][j-1]+       /*summing cells right-left  */
-               p[i+1][j]+p[HEIGHT-1][j]+       /*summing cells up-down     */
-               p[HEIGHT-1][0]+p[HEIGHT-1][j-1]+   /*summing cells right-left  */
-               p[i+1][0]+p[i+1][j-1];   /*summing cells right-left  */
-               break;
-            default:
-               sum = p[i][j+1]+p[i][j-1]+       /*summing cells right-left  */
-               p[i+1][j]+p[HEIGHT-1][j]+       /*summing cells up-down     */
-               p[HEIGHT-1][j+1]+p[HEIGHT-1][j-1]+   /*summing cells right-left  */
-               p[i+1][j+1]+p[i+1][j-1];   /*summing cells right-left  */
-              break;
-        }
-         break;
-      case HEIGHT-1:
-      switch (j) {
-        case 0:
-            sum =
-            p[i][j+1]+p[i][WIDTH-1]+       /*summing cells right-left  */
-            p[0][j]+p[i-1][j]+       /*summing cells up-down     */
-            p[i-1][j+1]+p[i-1][WIDTH-1]+   /*summing cells right-left  */
-            p[0][j+1]+p[0][WIDTH-1];   /*summing cells right-left  */
-            break;
-         case WIDTH-1:
-            sum =
-            p[i][0]+p[i][j-1]+       /*summing cells right-left  */
-            p[0][j]+p[i-1][j]+       /*summing cells up-down     */
-            p[i-1][0]+p[i-1][j-1]+   /*summing cells right-left  */
-            p[0][0]+p[0][j-1];   /*summing cells right-left  */
-            break;
-         default:
-           sum =
-           p[i][j+1]+p[i][j-1]+       /*summing cells right-left  */
-           p[0][j]+p[i-1][j]+       /*summing cells up-down     */
-           p[i-1][j+1]+p[i-1][j-1]+   /*summing cells up right-left  */
-           p[0][j+1]+p[0][j-1];   /*summing cells down right-left  */
-           break;
-}
-      default:
-         sum =
-         p[i][j+1]+p[i][j-1]+       /*summing cells right-left  */
-         p[i+1][j]+p[i-1][j]+       /*summing cells up-down     */
-         p[i-1][j+1]+p[i-1][j-1]+   /*summing cells right-left  */
-         p[i+1][j+1]+p[i+1][j-1];   /*summing cells right-left  */
-         break;
-}
+int iUp, iLow, jLeft, jRight, sum;
+   i=overspill(i,HEIGHT);
+   iUp=overspill(i-1,HEIGHT);
+   iLow=overspill(i+1,HEIGHT);
+   j=overspill(j,WIDTH);
+   jLeft=overspill(j-1,WIDTH);
+   jRight=overspill(j+1,WIDTH);
+
+  sum =
+  p[i][jRight]+p[i][jLeft]+       /*summing cells right-left  */
+  p[iLow][j]+p[iUp][j]+       /*summing cells up-down     */
+  p[iUp][jRight]+p[iUp][jLeft]+   /*summing cells right-left  */
+  p[iLow][jRight]+p[iLow][jLeft];   /*summing cells right-left  */
+
    return(sum);
 }
-
+int overspill(int i, int max)
+{
+  int division;
+    division=i/(max-1);
+  if (i>(max-1)){
+    i-=(division*(max));
+  }
+  if (i<0){i+=(max);}
+  return (i);
+}
+void arrayCopy(int p[HEIGHT][WIDTH], int q[HEIGHT][WIDTH])
+{
+   int i,j;
+      for(i=0;i<HEIGHT;i++){
+         for(j=0;j<WIDTH;j++){
+           q[i][j]=p[i][j];
+         }
+      }
+}
 void mySleep(int a)
 {
-   int i;
-      for(i=0;i<a*SLEEP_T;i++){}
+   int i,j;
+      for(i=0;i<a*SLEEP_T;){
+      j=i+1;
+        i=j;
+    }
 }
+/*void nextStep(int p[HEIGHT][WIDTH], int q[HEIGHT][WIDTH], int sum[HEIGHT][WIDTH])
+{
+   int j,i;
+      for(i=0;i<HEIGHT;i++){
+         for(j=0;j<WIDTH;j++){
+            sum[i][j] = sumSpecial(i,j,p);
+               switch (p[i][j]) {
+                  case DEAD_CELL:
+                     switch (sum[i][j]){
+                        case TEAM_ONE_THREE:
+                           q[i][j]=TEAM_ONE;
+                           break;
+                        case TEAM_TWO_THREE:
+                           q[i][j]=TEAM_TWO;
+                           break;
+                        default:
+                           q[i][j]=DEAD_CELL;
+                        break;
+                     }
+                     break;
+                  case TEAM_ONE:
+                     switch (sum[i][j]){
+                        case 2:
+                        case 3:
+                           q[i][j]=TEAM_ONE;
+                           break;
+                        default:
+                           q[i][j]=DEAD_CELL;
+                           break;
+                     }
+                     break;
+                  case TEAM_TWO:
+                     switch (sum[i][j]){
+                        case TEAM_TWO_TWO:
+                        case TEAM_TWO_THREE:
+                           q[i][j]=TEAM_TWO;
+                           break;
+                        default:
+                           q[i][j]=DEAD_CELL;
+                           break;
+                        }
+                        break;
+               }
+         }
+      }
+}
+*/

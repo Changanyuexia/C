@@ -2,7 +2,7 @@
 #include <stdlib.h>
 #include "neillsdl2.h"
 
-#define RECTSIZE 20
+#define RECTSIZE 2
 #define MILLISECONDDELAY 10
 
 int main(void)
