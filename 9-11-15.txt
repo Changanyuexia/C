@@ -1,0 +1,15 @@
+leaf node -- both pointer = NULL
+
+queue-- style in notes needs MAX_QUEUE
+
+%MAX_QUEUE - mod MAX_QUEUE lets us connect the front of the queue with the back in a circular way
+
+
+assert front != back because its possible to overflow
+
+process-near the top of the tree use queue
+process-near the bottom of the tree use recursive
+
+
+binary seearch trees-slide
+leaf node special case

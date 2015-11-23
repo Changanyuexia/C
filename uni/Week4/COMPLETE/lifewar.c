@@ -194,6 +194,7 @@ int sumNeighbours(int i, int j, int p[HEIGHT][WIDTH])
    p[iLow][jRight]+p[iLow][jLeft];   /*summing cells Dright-Dleft  */
    return(sum);
 }
+/*check if it can be replaced by a % sign */
 int overspill(int coordinate, int max)
 {
    int division;

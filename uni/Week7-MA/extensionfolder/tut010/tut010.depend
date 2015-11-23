@@ -1,0 +1,32 @@
+# depslib dependency file v1.0
+1386953706 source:c:\programming\sdlgames\tut010\cleanup.cpp
+	"game.h"
+
+1386954323 c:\programming\sdlgames\tut010\game.h
+	"includes.h"
+
+1386953796 c:\programming\sdlgames\tut010\includes.h
+	<SDL.h>
+	<SDL_image.h>
+	<SDL_ttf.h>
+	<iostream>
+	<string>
+
+1386957346 source:c:\programming\sdlgames\tut010\game.cpp
+	"game.h"
+
+1386957376 source:c:\programming\sdlgames\tut010\loadcontent.cpp
+	"game.h"
+
+1386956404 source:c:\programming\sdlgames\tut010\onevent.cpp
+	"game.h"
+
+1386952023 source:c:\programming\sdlgames\tut010\oninit.cpp
+	"game.h"
+
+1386948263 source:c:\programming\sdlgames\tut010\onloop.cpp
+	"game.h"
+
+1386956464 source:c:\programming\sdlgames\tut010\onrender.cpp
+	"game.h"
+

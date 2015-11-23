@@ -1,0 +1,3 @@
+create one list with the 1 edit distance
+then another with one
+so big array that crashes --decalare it as static goes to a different me

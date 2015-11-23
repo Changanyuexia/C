@@ -6,7 +6,8 @@ anagram:
 	gcc uni/Week5/timeKiller.c -std=c90 -pedantic -Wall -Wextra -o uni/Week5/timeKiller.out
 	uni/Week5/timeKiller.out compiler "uni/Week5/eowl_english_words.txt"
 
-
+vlife:
+	/uni/Week5/make run
 compileC:
 	gcc uni/Week4/COMPLETE/lifewar.c -std=c90 -pedantic -Wall -Wextra -o uni/Week4/COMPLETE/lifewar.out
 compileG:

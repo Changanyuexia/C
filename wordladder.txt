@@ -1,0 +1,62 @@
+cat search until cot 
+flag cat as parent (depth 0)---->>>pointer
+search until dot
+flag cot as parent (depth 1)
+example in pdf reverse order
+ fscan---psakse
+
+
+
+
+sort/insert
+{
+struct llist {
+   int i;
+   struct llist* next;
+};
+
+struct llist* myalloc(int i);
+struct llist *insert(struct llist *t,int i)
+int main (void)
+{
+   int i;
+   struct llist *top = NULL;
+   top = insert (top,i);
+}
+insert(){
+/*if empty list*/
+if t==NULL
+
+return myalloc(i);
+  struct llist *p;
+  struct llist *q;
+  if(i< t->i){
+     p=myalloc(i);
+     p->next = top;
+     return p;
+  }
+do{
+
+/*insert end*/
+    if (q->next ==NULL){
+       p =myalloc(i);
+       q->next=p;
+}
+/*insert in the middle*/
+     if (i>= q->i)&& (i,= q->next->i)){
+       p =myalloc(i);
+       p->next = q-> next;
+       q->next =p;
+
+   }
+}while();
+/*end of list*/
+
+}
+}
+
+
+myalloc(int i){
+struct llist *p = (struct llist*) malloc(sizeof(struct llist);
+
+}
