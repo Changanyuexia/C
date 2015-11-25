@@ -16,3 +16,5 @@ clean:
 
 run: all
 	./$(TARGET) $(DICTIONARY)
+freed: wordladderfreed.c Makefile
+	$(CC) wordladderfreed.c -o freed $(CFLAGS) -g

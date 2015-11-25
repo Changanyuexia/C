@@ -1,7 +1,7 @@
 push:
 	git push origin master
 commit:
-	git commit -a -m "Third Commit"
+	git commit -a -m $$(date +%d-%m-%Y/%H:%M)
 anagram:
 	gcc uni/Week5/timeKiller.c -std=c90 -pedantic -Wall -Wextra -o uni/Week5/timeKiller.out
 	uni/Week5/timeKiller.out compiler "uni/Week5/eowl_english_words.txt"
