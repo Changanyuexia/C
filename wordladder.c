@@ -1,4 +1,5 @@
-/*cat search until cot 
+/*change  whatever to commit dont cat*/
+/* cat search until cot 
 flag cat as parent (depth 0)---->>>pointer
 search until dot
 flag cot as parent (depth 1)
