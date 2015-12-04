@@ -1,4 +1,4 @@
-CFLAGS     =  -Wall -Wextra -Wfloat-equal -pedantic -std=c99 -lm
+CFLAGS     =  -Wall -Wextra -Wfloat-equal -pedantic -std=c99 -lm -fopenmp
 SDLFLAGS   = `sdl2-config --cflags`
 TARGET     = wordladder
 DICTIONARY = eowl_english_words.txt
@@ -18,3 +18,5 @@ run: all
 	./$(TARGET) $(DICTIONARY)
 freed: wordladderfreed.c Makefile
 	$(CC) wordladderfreed.c -o freed $(CFLAGS) -g
+time:
+	time ./$(TARGET) $(DICTIONARY)
