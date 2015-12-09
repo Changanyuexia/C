@@ -25,20 +25,16 @@ void printArray(Huf A[], unsigned int length);
 void charCount(Huf A[]);
 int findLeastF(Huf A[]);
 void printTree1(Huf A[],int i,int j);
-char* PrintTree(Huf *t,char *str);
+char* PrintTree(Huf *t);
 void coding(Huf *t);
 char* coding1(Huf *t);
 
 int main(void)
 {
   int i=0,j=0,a=ASCII;
-  char *str;
   Huf nodes[ASCII];
   Huf auxnodes[2*ASCII];
   Huf *current;
-  str = calloc(STRSIZE, sizeof(char));
-  assert(str != NULL);
-
   structInit(nodes);
   structInit2(auxnodes);
   charCount(nodes);
@@ -47,10 +43,10 @@ int main(void)
   do{
     i=findLeastF(auxnodes);
     auxnodes[i].used=1;
-    printf("least common:%c , index:%d\n",auxnodes[i].c,i);
+    /*printf("least common:%c , index:%d\n",auxnodes[i].c,i);*/
     j=findLeastF(auxnodes);
     auxnodes[j].used=1;
-    printf("least common:%c , index:%d\n",auxnodes[j].c,j);
+    /*printf("least common:%c , index:%d\n",auxnodes[j].c,j);*/
     auxnodes[a].freq=auxnodes[i].freq+auxnodes[j].freq;
     auxnodes[a].left=&auxnodes[i];
     auxnodes[a].right=&auxnodes[j];
@@ -61,19 +57,18 @@ int main(void)
   }while(i&&j);
   printf("niksoprint---i:%d--j:%d-\n",i, j);
   current=&auxnodes[i];
-  str=PrintTree(current,str);
-  printf("%s\n", str);
+
+  printf("%s\n",PrintTree(current));
+  coding(current);
   printArray(auxnodes,2*ASCII);
-  free(str);
-  /*coding(current);*/
   return 0;
 }
 void coding(Huf *t)
 {
-  int start=0;
+  static int start=0;
   char i[50];
   char j[50];
-  if(t==NULL)
+  if(t->left==NULL && t->right==NULL)
   return;
   i[0]='0';
   j[0]='1';
@@ -81,11 +76,14 @@ void coding(Huf *t)
   if(start==0){
     strcat(t->left->code,i);
     strcat(t->right->code,j);
+    start++;
   }
   strcpy(t->left->code,t->code);
-  strcat(t->left->code,i);
   strcpy(t->right->code,t->code);
+  strcat(t->left->code,i);
   strcat(t->right->code,j);
+    coding(t->left);
+    coding(t->right);
 }
 /*int coding1(Huf *t)
 {
@@ -127,20 +125,23 @@ char* coding1(Huf *t)
   return str;
 }
 */
-char* PrintTree(Huf *t, char* str)
+char* PrintTree(Huf *t)
 {
+  char *str;
+  str = calloc(STRSIZE, sizeof(char));
+  assert(str != NULL);
   if(t == NULL){
     strcpy(str, "*");
     return str;
   }
   if(t->c=='\n')
     sprintf(str, "%d-%d(%s)(%s)", 010,t->freq,
-    PrintTree(t->left,str),
-    PrintTree(t->right,str));
+    PrintTree(t->left),
+    PrintTree(t->right));
   else{
     sprintf(str, "%c-%d(%s)(%s)", t->c,t->freq,
-    PrintTree(t->left,str),
-    PrintTree(t->right,str));
+    PrintTree(t->left),
+    PrintTree(t->right));
   }
   return str;
 }
@@ -189,7 +190,7 @@ void charCount(Huf A[])
 {
   FILE *fp;
   char c;
-  fp=fopen("34words.txt","r");
+  fp=fopen("eowl_english_words.txt","r");
   while ( (c=fgetc(fp)) && c!=EOF){
     /*printf("%c%d%d\n",c,c,(int)c );*/
     A[(int)c].freq++;
@@ -202,10 +203,10 @@ void printArray(Huf A[], unsigned int length)
   for(i=0;i<length;i++){
     if(A[i].freq!=0){
       if(i=='\n'){
-        printf("%4d. %8s--%c10%c: %d\n",i,A[i].code,'"','"',A[i].freq);
+        printf("%4d. %10s--%c10%c: (%3lu * %d)\n",i,A[i].code,'"','"',strlen(A[i].code),A[i].freq);
       }
       else{
-        printf("%4d. %8s--%c%c%c : %d\n",i,A[i].code,'"',A[i].c,'"',A[i].freq);
+        printf("%4d. %10s--%c%c%c : (%3lu * %d)\n",i,A[i].code,'"',A[i].c,'"',strlen(A[i].code),A[i].freq);
       }
     }
   }

@@ -91,6 +91,8 @@ int main (int argc, char **argv)
       i++;
     }
   }
+  printf("%s%dsdrs4drasd\n", dnadoa);
+  print(""+"  "+a+"")
   freedom(w1,w2,start);
   return 0;
 }
