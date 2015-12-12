@@ -7,7 +7,16 @@ get tree printed */
 #include <ctype.h>
 #define ASCII   128
 #define STRSIZE 50000
-
+#define DEPTH_INIT -1
+#define SCREEN_WIDTH 58
+#define SCREEN_HEIGHT 20
+typedef struct rect Rect;
+struct rect{
+  int x;
+  int y;
+  int width;
+  int height;
+};
 typedef struct huffman Huf;
 struct huffman{
   char c;
@@ -18,55 +27,120 @@ struct huffman{
   int used;
   Huf *left,*right;
 };
-void structInit(Huf A[]);
-void structInit2(Huf A[]);
+void structInit(Huf A[], int length);
 void printArray(Huf A[], unsigned int length);
 void charCount(Huf A[], char *str);
 int findLeastF(Huf A[]);
 char* PrintTreeLong(Huf *t);
-char* PrintTree(Huf *t,int depth);
-/*this function also marks the depth to the right of each branch*/
 void coding(Huf *t);
-int brLength(Huf *t,int n);
-void coording(Huf *t);
+void coordinating(Huf *t, int d);
 int ScanArray(Huf auxnodes[]);
 int sortfqc(const void *a, const void *b);
-int findBranchDepth(Huf *t);
+Rect findNodeXY(Huf *t, Rect C);
+void makeBufferTable(Huf A[], char[][SCREEN_WIDTH]);
+void printScreen(char tree[][SCREEN_WIDTH]);
+void placeNodes(Huf A[], char tree[][SCREEN_WIDTH]);
+void placeORs(char tree[][SCREEN_WIDTH]);
+void TableInit(char tree[][SCREEN_WIDTH]);
+void placeDashes(char tree[][SCREEN_WIDTH]);
 
 int main(int argc, char **argv)
 {
-  int i=0,depth=0;
+  int i=0;
+  Rect C;
   char *str=NULL;
-  Huf nodes[ASCII];
-  Huf auxnodes[2*ASCII];
+  char treeView[SCREEN_HEIGHT][SCREEN_WIDTH];
+  Huf nodes[2*ASCII];
   Huf *current;
   if(argc!=2){
     fprintf(stderr, "Too few arguments\n");
     exit(1);
   }
-  structInit(nodes);
-  structInit2(auxnodes);
+  C.x=C.y=C.height=0;
+  C.width=-1;
+  structInit(nodes, 2*ASCII);
   charCount(nodes,argv[1]);
-  memcpy(auxnodes,nodes ,sizeof(nodes));
-  i=ScanArray(auxnodes);
-  current=&auxnodes[i];
+  i=ScanArray(nodes);
+  current=&nodes[i];
   coding(current);
-  printArray(auxnodes,ASCII);
-  /*depth=findBranchDepth(current->left);*/
-  /*str=PrintTree(current,depth);
-  printf("%s\n",str);
-  str=NULL;*/
+  findNodeXY(current, C);
   str=PrintTreeLong(current);
   printf("%s\n",str);
   free(str);
-  printf("%d\n",depth);
-  printf("ws edw\n");
+  printArray(nodes,2*ASCII);
+  makeBufferTable(nodes, treeView);
+  printScreen(treeView);
 
-  printArray(auxnodes,ASCII);
   /*qsort(auxnodes,2*ASCII,sizeof(Huf),sortfqc);*/
-  printArray(auxnodes,2*ASCII);
   return 0;
 }
+void placeDashes(char tree[][SCREEN_WIDTH])
+{
+  int i,j,cnt;
+    for(j=0;j<SCREEN_WIDTH-1;j++){
+      if(!isgraph(tree[0][j])){
+        tree[0][j]='-';
+      }
+    }
+  do{
+    cnt=0;
+    for(i=0;i<SCREEN_HEIGHT-1;i++){
+      for(j=1;j<SCREEN_WIDTH;j++){
+        if(tree[i-1][j]==' '&&tree[i][j-1]==' '&&isgraph(tree[i][j])){
+          tree[i][j-1]='-';
+          cnt++;
+        }
+      }
+    }
+  }while(cnt);
+}
+void TableInit(char tree[][SCREEN_WIDTH])
+{
+  int i,j;
+  for(i=0;i<SCREEN_HEIGHT;i++){
+    for(j=0;j<SCREEN_WIDTH;j++){
+      tree[i][j]=' '  ;
+    }
+    tree[i][SCREEN_WIDTH-1]='\0';
+  }
+}
+void placeORs(char tree[][SCREEN_WIDTH])
+{
+  int i,j;
+  for(i=1;i<SCREEN_HEIGHT;i++){
+    for(j=0;j<SCREEN_WIDTH;j++){
+      if(isgraph(tree[i-1][j])&&isgraph(tree[i+1][j])){
+        tree[i][j]='|';
+      }
+    }
+  }
+
+}
+void placeNodes(Huf A[], char tree[][SCREEN_WIDTH])
+{
+  int i;
+  for(i=0;i<2*ASCII;i++){
+    if(A[i].freq!=0){
+      tree[A[i].y*2][A[i].x*2]=A[i].c;
+    }
+  }
+}
+void printScreen(char tree[][SCREEN_WIDTH])
+{
+  int i;
+  for(i=0;i<SCREEN_HEIGHT;i++){
+      printf("%s\n",tree[i]);
+  }
+}
+
+void makeBufferTable(Huf A[], char tree[][SCREEN_WIDTH])
+{
+  TableInit(tree);
+  placeNodes(A,tree);
+  placeORs(tree);
+  placeDashes(tree);
+}
+
 int sortfqc(const void *a, const void *b)
 {
   Huf *ta, *tb;
@@ -74,7 +148,6 @@ int sortfqc(const void *a, const void *b)
   tb= (Huf*)b;
   return ta->freq - tb->freq;
 }
-
 int ScanArray(Huf auxnodes[])
 {
   int i=0,j=0,a=ASCII;
@@ -86,7 +159,6 @@ int ScanArray(Huf auxnodes[])
     auxnodes[a].freq=auxnodes[i].freq+auxnodes[j].freq;
     auxnodes[a].left=&auxnodes[i];
     auxnodes[a].right=&auxnodes[j];
-  /*  auxnodes[i].parent=auxnodes[j].parent=&auxnodes[a];*/
     a++;
     }while(i&&j);
   return i;
@@ -115,62 +187,22 @@ void coding(Huf *t)
   coding(t->right);
 }
 
-int findBranchDepth(Huf *t)
+Rect findNodeXY(Huf *t, Rect C)
 {
-  Huf *p=t;
-  int depth=0;
-  int i=0;
-  if(t==NULL)
-  return depth;
-   while (p->right!=NULL){
-     depth++;
-     p=p->right;
+  if(t==NULL){
+    return C;
   }
-  printf("%d\n",depth );
-  i=findBranchDepth(t->left);
-  if(i>depth){
-    depth=i;
+  t->x=C.width+1;
+  t->y=C.height+C.y;
+  C.height++;
+  C=findNodeXY(t->left, C);
+  C.y--;
+  if(t->right!=NULL)
+  {
+  C.width++;
+  C=findNodeXY(t->right, C);
   }
-  return depth;
-}
-
-char* PrintTree(Huf *t,int depth)
-{
-  int i=0;
-  char *str, *rstr, *lstr;
-  char dash[2]={'-','\0'};
-  char nline[2]={'\n','\0'};
-  str = (char*) calloc(STRSIZE, sizeof(char));
-  assert(str != NULL);
-  if( t==NULL){
-    strcpy(str, "*");
-    return str;
-  }
-    rstr=PrintTree(t->right,depth);
-    lstr=PrintTree(t->left,0);
-    if(t->left!=NULL)
-    depth=findBranchDepth(t->left);
-    if(!isgraph(t->c)){
-      sprintf(str, "%d", t->c);
-      for(i=0;i<=depth;i++){
-        strcat(str,dash);
-      }
-      strcat(str,rstr);
-      strcat(str,nline);
-      strcat(str,lstr);
-  }
-  else{
-    sprintf(str, "%c", t->c);
-      for(i=0;i<=depth;i++){
-        strcat(str,dash);
-      }
-      strcat(str,rstr);
-      strcat(str,nline);
-      strcat(str,lstr);
-  }
-  free(lstr);
-  free(rstr);
-  return str;
+  return C;
 }
 char* PrintTreeLong(Huf *t)
 {
@@ -210,23 +242,16 @@ int findLeastF(Huf A[])
   }
   return cursor;
 }
-void structInit(Huf A[])
+void structInit(Huf A[], int length)
 {
   int i;
-  for (i=0;i<ASCII;i++){
+  for (i=0;i<length;i++){
+    if(isprint(i)){
     A[i].c=i;
-    A[i].used=0;
-    A[i].freq=0;
-    A[i].left=NULL;
-    A[i].right=NULL;
-  }
-}
-void structInit2(Huf A[])
-{
-  int i;
-  for (i=ASCII;i<2*ASCII;i++){
-    A[i].c='@';
-    /*A[i].code="0";*/
+    }
+    else{
+      A[i].c='#';
+    }
     A[i].used=0;
     A[i].freq=0;
     A[i].left=NULL;
@@ -243,7 +268,10 @@ void charCount(Huf A[],char *str)
     exit(1);
   }
   while ( (c=fgetc(fp)) && c!=EOF){
-    A[(int)c].freq++;
+    if(isalpha(c)){
+      c=toupper(c);
+      A[(int)c].freq++;
+    }
   }
   fclose(fp);
 }
@@ -252,13 +280,13 @@ void printArray(Huf A[], unsigned int length)
   unsigned int i;
   int count=0;
   for(i=0;i<length;i++){
-    if(A[i].freq!=0 && A[i].c !='@'){
+    if(A[i].freq!=0){
         count+=(int)strlen(A[i].code)*A[i].freq;
       if(!isprint(A[i].c)&& A[i].c!='@'){
         printf("%c%d%c: %20s (%3lu * %7ld)\n",'"',A[i].c,'"',A[i].code,strlen(A[i].code),A[i].freq);
       }
       else{
-        printf("%c%c%c : %20s (%3lu * %7ld)\n",'"',A[i].c,'"',A[i].code,strlen(A[i].code),A[i].freq);
+        printf("%c%c%c : %20s (%3lu * %7ld  x:%d , y:%d )\n",'"',A[i].c,'"',A[i].code,strlen(A[i].code),A[i].freq,A[i].x,A[i].y);
       }
     }
   }

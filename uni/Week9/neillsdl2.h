@@ -1,7 +1,7 @@
 #include <SDL2/SDL.h>
 #include <math.h>
 
-#define WWIDTH 800
+#define WWIDTH 1150
 #define WHEIGHT 600
 
 /* Font stuff */
@@ -20,13 +20,13 @@ typedef unsigned short fntrow;
 
 /* All info required for windows / renderer & event loop */
 struct SDL_Simplewin {
-   SDL_bool finished;
+   int finished;
    SDL_Window *win;
    SDL_Renderer *renderer;
 };
 typedef struct SDL_Simplewin SDL_Simplewin;
 
-void Neill_SDL_Init(SDL_Simplewin *sw);
+void Neill_SDL_Init(SDL_Simplewin *sw, int width, int height);
 void Neill_SDL_Events(SDL_Simplewin *sw);
 void Neill_SDL_SetDrawColour(SDL_Simplewin *sw, Uint8 r, Uint8 g, Uint8 b);
 void Neill_SDL_RenderFillCircle(SDL_Renderer *rend, int cx, int cy, int r);

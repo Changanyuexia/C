@@ -2,7 +2,7 @@
 
 /* Set up a simple (WIDTH, HEIGHT) window.
    Attempt to hide the renderer etc. from user. */
-void Neill_SDL_Init(SDL_Simplewin *sw)
+void Neill_SDL_Init(SDL_Simplewin *sw, int width, int height)
 {
 
 
@@ -10,14 +10,14 @@ void Neill_SDL_Init(SDL_Simplewin *sw)
       fprintf(stderr, "\nUnable to initialize SDL:  %s\n", SDL_GetError());
       SDL_Quit();
       exit(1);
-   } 
+   }
 
    sw->finished = 0;
-   
+
    sw->win= SDL_CreateWindow("SDL Window",
                           SDL_WINDOWPOS_UNDEFINED,
                           SDL_WINDOWPOS_UNDEFINED,
-                          WWIDTH, WHEIGHT,
+                          width, height,
                           SDL_WINDOW_SHOWN);
    if(sw->win == NULL){
       fprintf(stderr, "\nUnable to initialize SDL Window:  %s\n", SDL_GetError());
@@ -43,13 +43,13 @@ void Neill_SDL_Init(SDL_Simplewin *sw)
 void Neill_SDL_Events(SDL_Simplewin *sw)
 {
    SDL_Event event;
-   while(SDL_PollEvent(&event)) 
-   {      
+   while(SDL_PollEvent(&event))
+   {
        switch (event.type){
           case SDL_QUIT:
           case SDL_MOUSEBUTTONDOWN:
           case SDL_KEYDOWN:
-             sw->finished = 1;
+             sw->finished =1;
        }
     }
 }
