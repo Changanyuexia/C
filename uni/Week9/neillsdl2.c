@@ -122,7 +122,7 @@ void Neill_SDL_DrawChar(SDL_Simplewin *sw, fntrow fontdata[FNTCHARS][FNTHEIGHT],
          else{
             /*printf(".");*/
             /* Black Ink */
-            Neill_SDL_SetDrawColour(sw, 0, 0, 0);
+            Neill_SDL_SetDrawColour(sw, 10, 100, 100);
             SDL_RenderDrawPoint(sw->renderer, x + ox, y+oy);
          }
       }

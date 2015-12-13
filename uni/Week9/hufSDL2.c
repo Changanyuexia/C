@@ -17,7 +17,7 @@ struct rect{
   int width;
   int height;
 };
-typedef enum pDir{left,right} pDir;
+
 typedef struct huffman Huf;
 struct huffman{
   char c;
@@ -25,12 +25,9 @@ struct huffman{
   int bitLength;
   int depth;
   int x;
-  int SDLx;
   int y;
   long int freq;
   int used;
-  pDir parentDirection;
-  Huf *parent;
   Huf *left,*right;
 };
 
@@ -51,7 +48,7 @@ void placeNodes(Huf A[], char **tree);
 void placeORs(char **tree, Rect R);
 void TableInit(char **tree, Rect R);
 void placeDashes(char **tree, Rect R);
-void SDL(Huf *t, int depth);
+void SDL(char **A, Rect R);
 char** makeBufferTable(Huf A[], Rect *p);
 Rect findTableLimits(Huf A[]);
 int max(int a, int b);
@@ -63,7 +60,6 @@ int findMaxDepth(Huf A[]);
 void mallocCodeStrings(Huf *t);
 int findTotBytes(Huf A[], int lenght);
 void freeCodeStrings(Huf *t);
-void N_SDL_print(Huf *t,int x,int depth, SDL_Simplewin *s,fntrow fontdata[FNTCHARS][FNTHEIGHT]);
 
 int main(int argc, char **argv)
 {
@@ -96,7 +92,7 @@ int main(int argc, char **argv)
   tree=makeBufferTable(nodes,pR);
   /*qsort(auxnodes,2*ASCII,sizeof(Huf),sortfqc);*/
   printScreen(tree,R);
-  SDL(top,depth);
+  SDL(tree,R);
   freeTable(tree,R);
   return 0;
 }
@@ -155,56 +151,25 @@ void freeTable(char **Table, Rect R)
   }
   free(Table);
 }
-void SDL(Huf *t, int depth)
+void SDL(char **A, Rect R)
 {
+  int i;
   SDL_Simplewin sw;
   SDL_Simplewin *s=&sw;
   fntrow fontdata[FNTCHARS][FNTHEIGHT];
 
-     Neill_SDL_Init(s, FNTWIDTH*(depth*10),FNTHEIGHT*(depth*3));
+     Neill_SDL_Init(&sw, FNTWIDTH*(R.width+3),FNTHEIGHT*(R.height+3));
      Neill_SDL_ReadFont(fontdata, (char *)FNTFILENAME);
-     while(!s->finished){
-
-    /*   for(i=0;i<=2*ASCII;i++){
-     Neill_SDL_SetDrawColour(s,10,100,100);
-     Neill_SDL_RenderFillCircle(s->renderer, FNTWIDTH*A[i].x+20/2, FNTHEIGHT*A[i].depth*2+20/2, 20);
-         Neill_SDL_DrawChar(s, fontdata,A[i].c, FNTWIDTH*A[i].x, FNTHEIGHT*(A[i].depth)*2);
+     while(!sw.finished){
+       for(i=0;i<=R.height;i++){
+         Neill_SDL_DrawString(&sw, fontdata,A[i], 0, FNTHEIGHT*(i+1));
        }
-*/
-    N_SDL_print(t,4*depth,depth,s,fontdata);
-
-       SDL_RenderPresent(s->renderer);
-       SDL_UpdateWindowSurface(s->win);
-     Neill_SDL_Events(s);
+       SDL_RenderPresent(sw.renderer);
+       SDL_UpdateWindowSurface(sw.win);
+     Neill_SDL_Events(&sw);
      }
      SDL_FREE(s);
 
-}
-void N_SDL_print(Huf *t, int x,int depth, SDL_Simplewin *s,fntrow fontdata[FNTCHARS][FNTHEIGHT])
-{
-  if(t==NULL){
-    return;
-  }
-  t->SDLx=x;
-  if(t->parent==NULL){
-    Neill_SDL_DrawChar(s,fontdata, t->c, FNTWIDTH*x, FNTHEIGHT*t->depth*2);
-  }
-  if(t->parentDirection==left){
-    Neill_SDL_DrawChar(s,fontdata, t->c, FNTWIDTH*x, FNTHEIGHT*(t->depth*2-1));
-  }
-  if(t->parentDirection==right){
-    Neill_SDL_DrawChar(s,fontdata, t->c, FNTWIDTH*x, FNTHEIGHT*t->depth*2);
-  }
-  if(t->parent!=NULL&&t->parentDirection==left){
-    SDL_RenderDrawLine(s->renderer, x*FNTWIDTH+FNTWIDTH/2, FNTHEIGHT*t->depth*2,
-       t->parent->SDLx*FNTWIDTH+FNTWIDTH/2, FNTHEIGHT*(t->parent->depth*2));
-  }
-  if(t->parent!=NULL&&t->parentDirection==right){
-    SDL_RenderDrawLine(s->renderer, x*FNTWIDTH+FNTWIDTH/2, FNTHEIGHT*t->depth*2,
-       t->parent->SDLx*FNTWIDTH+FNTWIDTH/2, FNTHEIGHT*(t->parent->depth*2));
-  }
-  N_SDL_print(t->left, x-(depth-(t->depth*2)),depth,s,fontdata);
-  N_SDL_print(t->right, x+(depth-(t->depth*2)),depth,s,fontdata);
 }
 void SDL_FREE(SDL_Simplewin *s)
 {
@@ -345,22 +310,17 @@ int sortfqc(const void *a, const void *b)
   tb= (Huf*)b;
   return ta->freq - tb->freq;
 }
-int ScanArray(Huf nodes[])
+int ScanArray(Huf auxnodes[])
 {
   int i=0,j=0,a=ASCII;
   do{
-    i=findLeastFreq(nodes);
-    nodes[i].used=1;
-    j=findLeastFreq(nodes);
-    nodes[j].used=1;
-    nodes[a].freq=nodes[i].freq+nodes[j].freq;
-    nodes[i].parent=&nodes[a];
-    nodes[j].parent=&nodes[a];
-    nodes[i].parentDirection=right;
-    nodes[j].parentDirection=left;
-    nodes[a].left=&nodes[i];
-    nodes[a].right=&nodes[j];
-
+    i=findLeastFreq(auxnodes);
+    auxnodes[i].used=1;
+    j=findLeastFreq(auxnodes);
+    auxnodes[j].used=1;
+    auxnodes[a].freq=auxnodes[i].freq+auxnodes[j].freq;
+    auxnodes[a].left=&auxnodes[i];
+    auxnodes[a].right=&auxnodes[j];
     a++;
     }while(i&&j);
   return i;
@@ -438,7 +398,6 @@ void structInit(Huf A[], int length)
     A[i].depth=0;
     A[i].used=0;
     A[i].freq=0;
-    A[i].parent=NULL;
     A[i].left=NULL;
     A[i].right=NULL;
     A[i].x=0;

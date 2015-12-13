@@ -1,5 +1,5 @@
 push:
-	git push origin master
+	git push
 commit:
 	git commit -a -m $$(date +%d-%m-%Y/%H:%M)
 anagram:
