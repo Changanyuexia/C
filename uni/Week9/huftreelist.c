@@ -30,7 +30,7 @@ struct huffman{
 void structInit(Huf A[], int length);
 void printArray(Huf A[], unsigned int length);
 void charCount(Huf A[], char *str);
-int findLeastF(Huf A[]);
+int findLeastFreq(Huf A[]);
 char* PrintTreeLong(Huf *t);
 void coding(Huf *t);
 void coordinating(Huf *t, int d);
@@ -152,9 +152,9 @@ int ScanArray(Huf auxnodes[])
 {
   int i=0,j=0,a=ASCII;
   do{
-    i=findLeastF(auxnodes);
+    i=findLeastFreq(auxnodes);
     auxnodes[i].used=1;
-    j=findLeastF(auxnodes);
+    j=findLeastFreq(auxnodes);
     auxnodes[j].used=1;
     auxnodes[a].freq=auxnodes[i].freq+auxnodes[j].freq;
     auxnodes[a].left=&auxnodes[i];
@@ -227,7 +227,7 @@ char* PrintTreeLong(Huf *t)
   free(rstr);
   return str;
 }
-int findLeastF(Huf A[])
+int findLeastFreq(Huf A[])
 {
   int i,min=0,cursor=0;
   for(i=0;i<2*ASCII;i++){

@@ -5,6 +5,7 @@
 #include <ctype.h>
 
 #include "neillsdl2.h"
+
 #define FNTFILENAME "m7fixed.fnt"
 
 #define ASCII   128
@@ -16,21 +17,25 @@ struct rect{
   int width;
   int height;
 };
+
 typedef struct huffman Huf;
 struct huffman{
   char c;
-  char code[50];
+  char *code;
+  int bitLength;
+  int depth;
   int x;
   int y;
   long int freq;
   int used;
   Huf *left,*right;
 };
+
 Rect rectInit(Rect R);
 void structInit(Huf A[], int length);
 void printArray(Huf A[], unsigned int length);
 void charCount(Huf A[], char *str);
-int findLeastF(Huf A[]);
+int findLeastFreq(Huf A[]);
 char* PrintTreeLong(Huf *t);
 char* PrintTree(Huf *t,int depth);
 void coding(Huf *t);
@@ -49,10 +54,18 @@ Rect findTableLimits(Huf A[]);
 int max(int a, int b);
 char** mallocTable(Rect R);
 void freeTable(char **Table, Rect R);
+void SDL_FREE(SDL_Simplewin *s);
+void findBranchLenght(Huf *t);
+int findMaxDepth(Huf A[]);
+void mallocCodeStrings(Huf *t);
+int findTotBytes(Huf A[], int lenght);
+void freeCodeStrings(Huf *t);
 
 int main(int argc, char **argv)
 {
   int i=0;
+  int depth=0;
+  int totBytes=0;
   Rect R;
   Rect *pR=&R;
   Huf nodes[2*ASCII];
@@ -67,15 +80,65 @@ int main(int argc, char **argv)
   charCount(nodes,argv[1]);
   i=ScanArray(nodes);
   top=&nodes[i];
+  findBranchLenght(top);
+  depth=findMaxDepth(nodes);
+  fprintf(stdout,"%d\n",depth );
+  mallocCodeStrings(top);
   coding(top);
   findNodeX(top, R);
-  printArray(nodes,2*ASCII);
+  totBytes=findTotBytes(nodes,ASCII);
+  printArray(nodes,ASCII);
+  fprintf(stdout,"%d bytes\n",totBytes);
+  freeCodeStrings(top);
   tree=makeBufferTable(nodes,pR);
   /*qsort(auxnodes,2*ASCII,sizeof(Huf),sortfqc);*/
   printScreen(tree,R);
   SDL(tree,R);
   freeTable(tree,R);
   return 0;
+}
+int findTotBytes(Huf A[], int length)
+{
+  int i,cnt=0;
+  for(i=0;i<length;i++){
+    if(A[i].code!=NULL){
+      A[i].bitLength=(int)strlen(A[i].code);
+      cnt+=(A[i].bitLength*A[i].freq);
+    }
+  }
+  return cnt/8;
+}
+void mallocCodeStrings(Huf *t)
+{
+  if(t==NULL){
+    return;
+  }
+  t->code = (char *)malloc(sizeof(char *));
+  mallocCodeStrings(t->left);
+  mallocCodeStrings(t->right);
+}
+void freeCodeStrings(Huf *t)
+{
+  if(t==NULL){
+    return;
+  }
+  free (t->code);
+  freeCodeStrings(t->left);
+  freeCodeStrings(t->right);
+}
+void findBranchLenght(Huf *t)
+{
+  if(t==NULL){
+    return;
+  }
+  if(t->left!=NULL){
+    t->left->depth=t->depth+1;
+    findBranchLenght(t->left);
+  }
+  if(t->right!=NULL){
+    t->right->depth=t->depth+1;
+    findBranchLenght(t->right);
+  }
 }
 void freeTable(char **Table, Rect R)
 {
@@ -89,6 +152,7 @@ void SDL(char **A, Rect R)
 {
   int i;
   SDL_Simplewin sw;
+  SDL_Simplewin *s=&sw;
   fntrow fontdata[FNTCHARS][FNTHEIGHT];
 
      Neill_SDL_Init(&sw, FNTWIDTH*(R.width+3),FNTHEIGHT*(R.height+3));
@@ -101,10 +165,17 @@ void SDL(char **A, Rect R)
        SDL_UpdateWindowSurface(sw.win);
      Neill_SDL_Events(&sw);
      }
-     SDL_RenderClear(sw.renderer);
-     SDL_DestroyRenderer(sw.renderer);
-     SDL_DestroyWindow(sw.win);
-     SDL_Quit();
+     SDL_FREE(s);
+
+}
+void SDL_FREE(SDL_Simplewin *s)
+{
+  SDL_RenderClear(s->renderer);
+  SDL_DestroyRenderer(s->renderer);
+  SDL_DestroyWindow(s->win);
+  s->renderer=NULL;
+  s->win=NULL;
+  SDL_Quit();
 }
 void placeDashes(char **tree, Rect R)
 {
@@ -166,7 +237,7 @@ void printScreen(char **tree,Rect R)
 {
   int i;
   for(i=0;i<=R.height;i++){
-      printf("%s\n",tree[i]);
+      fprintf(stdout,"%s\n",tree[i]);
   }
 }
 char** makeBufferTable(Huf A[], Rect *p)
@@ -187,10 +258,16 @@ char** mallocTable(Rect R)
   int i;
   char **tree;
   tree = (char**) malloc((R.height+1)*sizeof(char*));
-  assert(tree!=NULL);
+  if(tree==NULL){
+    fprintf(stderr,"Unable to malloc rows\n");
+    exit(1);
+  }
   for (i = 0; i<=R.height; i++){
     tree[i] = (char*) malloc((R.width+1)*sizeof(char));
-    assert(tree[i]!=NULL);
+    if(tree[i]==NULL){
+      fprintf(stderr,"Unable to malloc column %d\n",i);
+      exit(1);
+    }
   }
   return tree;
 }
@@ -204,6 +281,15 @@ Rect findTableLimits(Huf A[])
    R.height=max(2*A[i].y, R.height);
   }
   return R;
+}
+int findMaxDepth(Huf A[])
+{
+  int i;
+  int depth=0;
+  for(i=0;i<2*ASCII;i++){
+   depth=max(A[i].depth, depth);
+  }
+  return depth;
 }
 int max(int a, int b)
 {
@@ -225,21 +311,19 @@ int ScanArray(Huf auxnodes[])
 {
   int i=0,j=0,a=ASCII;
   do{
-    i=findLeastF(auxnodes);
+    i=findLeastFreq(auxnodes);
     auxnodes[i].used=1;
-    j=findLeastF(auxnodes);
+    j=findLeastFreq(auxnodes);
     auxnodes[j].used=1;
     auxnodes[a].freq=auxnodes[i].freq+auxnodes[j].freq;
     auxnodes[a].left=&auxnodes[i];
     auxnodes[a].right=&auxnodes[j];
-  /*  auxnodes[i].parent=auxnodes[j].parent=&auxnodes[a];*/
     a++;
     }while(i&&j);
   return i;
 }
 void coding(Huf *t)
 {
-  static int start=0;
   char i[2];
   char j[2];
   if(t->left==NULL && t->right==NULL){
@@ -248,15 +332,20 @@ void coding(Huf *t)
   i[0]='0';
   j[0]='1';
   i[1]=j[1]='\0';
-  if(start==0){
+  /*if(t->code==NULL){
     strcat(t->left->code,i);
     strcat(t->right->code,j);
-    start++;
-  }
+  }*/
   strcpy(t->left->code,t->code);
   strcpy(t->right->code,t->code);
-  strcat(t->left->code,i);
-  strcat(t->right->code,j);
+  if(strcat(t->left->code,i)==NULL){
+    fprintf(stderr,"Unale to perform ""strcat""\n");
+    exit(1);
+  }
+  if(strcat(t->right->code,j)==NULL){
+    fprintf(stderr,"Unale to perform ""strcat""\n");
+    exit(1);
+  }
   coding(t->left);
   coding(t->right);
 }
@@ -276,7 +365,7 @@ Rect findNodeX(Huf *t, Rect C)
   }
   return C;
 }
-int findLeastF(Huf A[])
+int findLeastFreq(Huf A[])
 {
   int i,min=0,cursor=0;
   for(i=0;i<2*ASCII;i++){
@@ -301,6 +390,9 @@ void structInit(Huf A[], int length)
     else{
       A[i].c='#';
     }
+    A[i].code=NULL;
+    A[i].bitLength=0;
+    A[i].depth=0;
     A[i].used=0;
     A[i].freq=0;
     A[i].left=NULL;
@@ -329,21 +421,18 @@ void charCount(Huf A[],char *str)
 void printArray(Huf A[], unsigned int length)
 {
   unsigned int i;
-  int count=0;
   for(i=0;i<length;i++){
-    if(A[i].freq!=0){
-        count+=(int)strlen(A[i].code)*A[i].freq;
+    if(A[i].code!=NULL){
       if(!isprint(A[i].c)&& A[i].c!='@'){
-        printf("%c%d%c: %20s (%3lu * %7ld)\n",'"',
-        A[i].c,'"',A[i].code,strlen(A[i].code),A[i].freq);
+        fprintf(stdout,"%c%d%c: %20s (%3d * %7ld)\n",'"',
+        A[i].c,'"',A[i].code,A[i].bitLength,A[i].freq);
       }
       else{
-        printf("%c%c%c : %20s (%3lu * %7ld  x:%d , y:%d )\n",'"',
-        A[i].c,'"',A[i].code,strlen(A[i].code),A[i].freq,A[i].x,A[i].y);
+        fprintf(stdout,"%c%c%c : %20s (%3d * %7ld  x:%d , y:%d, depth: %d)\n",'"',
+        A[i].c,'"',A[i].code,A[i].bitLength,A[i].freq,A[i].x,A[i].y,A[i].depth);
       }
     }
   }
-  printf("%10d bytes\n",count/8 );
 }
 Rect rectInit(Rect R)
 {
