@@ -59,7 +59,7 @@ char** mallocTable(Rect R);
 void freeTable(char **Table, Rect R);
 void SDL_FREE(SDL_Simplewin *s);
 void findBranchLenght(Huf *t);
-int findMaxDepth(Huf A[]);
+int findMaxDepth(Huf *t,int depth);
 void mallocCodeStrings(Huf *t);
 int findTotBytes(Huf A[], int lenght);
 void freeCodeStrings(Huf *t);
@@ -85,7 +85,8 @@ int main(int argc, char **argv)
   i=ScanArray(nodes);
   top=&nodes[i];
   findBranchLenght(top);
-  depth=findMaxDepth(nodes);
+  depth=findMaxDepth(top,depth);
+  printf("depth%d\n",depth );
   mallocCodeStrings(top);
   coding(top);
   findNodeX(top, R);
@@ -161,7 +162,7 @@ void SDL(Huf *t, int depth)
   SDL_Simplewin *s=&sw;
   fntrow fontdata[FNTCHARS][FNTHEIGHT];
 
-     Neill_SDL_Init(s, FNTWIDTH*(depth*10),FNTHEIGHT*(depth*3));
+     Neill_SDL_Init(s, FNTWIDTH*(depth*10),FNTHEIGHT*(depth*5));
      Neill_SDL_ReadFont(fontdata, (char *)FNTFILENAME);
      while(!s->finished){
 
@@ -185,26 +186,19 @@ void N_SDL_print(Huf *t, int x,int depth, SDL_Simplewin *s,fntrow fontdata[FNTCH
   if(t==NULL){
     return;
   }
-  t->SDLx=x;
-  if(t->parent==NULL){
-    Neill_SDL_DrawChar(s,fontdata, t->c, FNTWIDTH*x, FNTHEIGHT*t->depth*2);
-  }
-  if(t->parentDirection==left){
-    Neill_SDL_DrawChar(s,fontdata, t->c, FNTWIDTH*x, FNTHEIGHT*(t->depth*2-1));
-  }
-  if(t->parentDirection==right){
-    Neill_SDL_DrawChar(s,fontdata, t->c, FNTWIDTH*x, FNTHEIGHT*t->depth*2);
-  }
   if(t->parent!=NULL&&t->parentDirection==left){
-    SDL_RenderDrawLine(s->renderer, x*FNTWIDTH+FNTWIDTH/2, FNTHEIGHT*t->depth*2,
-       t->parent->SDLx*FNTWIDTH+FNTWIDTH/2, FNTHEIGHT*(t->parent->depth*2));
+    SDL_RenderDrawLine(s->renderer, x*FNTWIDTH+FNTWIDTH/2, FNTHEIGHT*(t->depth*3-1/2),
+       t->parent->SDLx*FNTWIDTH+FNTWIDTH/2, FNTHEIGHT*(t->parent->depth*3-1/2));
   }
   if(t->parent!=NULL&&t->parentDirection==right){
-    SDL_RenderDrawLine(s->renderer, x*FNTWIDTH+FNTWIDTH/2, FNTHEIGHT*t->depth*2,
-       t->parent->SDLx*FNTWIDTH+FNTWIDTH/2, FNTHEIGHT*(t->parent->depth*2));
+    SDL_RenderDrawLine(s->renderer, x*FNTWIDTH+FNTWIDTH/2, FNTHEIGHT*(t->depth*3-1/2),
+       t->parent->SDLx*FNTWIDTH+FNTWIDTH/2, FNTHEIGHT*(t->parent->depth*3-1/2));
   }
-  N_SDL_print(t->left, x-(depth-(t->depth*2)),depth,s,fontdata);
-  N_SDL_print(t->right, x+(depth-(t->depth*2)),depth,s,fontdata);
+  t->SDLx=x;
+  Neill_SDL_DrawChar(s,fontdata, t->c, FNTWIDTH*x, FNTHEIGHT*t->depth*3);
+
+  N_SDL_print(t->left, x-((findMaxDepth(t->left,0)+findMaxDepth(t->right,0)-2*t->depth)),depth,s,fontdata);
+  N_SDL_print(t->right, x+((findMaxDepth(t->right,0)+findMaxDepth(t->left,0)-2*t->depth)),depth,s,fontdata);
 }
 void SDL_FREE(SDL_Simplewin *s)
 {
@@ -320,7 +314,19 @@ Rect findTableLimits(Huf A[])
   }
   return R;
 }
-int findMaxDepth(Huf A[])
+int findMaxDepth(Huf *t,int depth)
+{
+  if(t==NULL){
+    return depth;
+  }
+    printf("%d\n",depth);
+  depth=max(depth,t->depth);
+  depth=max(findMaxDepth(t->left,depth),depth);
+  depth=max(findMaxDepth(t->right,depth),depth);
+  return depth;
+}
+
+int findMaxDepth2(Huf A[])
 {
   int i;
   int depth=0;
@@ -363,6 +369,7 @@ int ScanArray(Huf nodes[])
 
     a++;
     }while(i&&j);
+    nodes[i].parent=NULL;
   return i;
 }
 void coding(Huf *t)
