@@ -38,37 +38,32 @@ Rect rectInit(Rect R);
 void structInit(Huf A[], int length);
 void printArray(Huf A[], unsigned int length);
 void charCount(Huf A[], char *str);
-int findLeastFreq(Huf A[]);
-char* PrintTreeLong(Huf *t);
-char* PrintTree(Huf *t,int depth);
-void coding(Huf *t);
-void coordinating(Huf *t, int d);
 int ScanArray(Huf auxnodes[]);
-int sortfqc(const void *a, const void *b);
-Rect findNodeX(Huf *t, Rect C);
-void printScreen(char **tree, Rect R);
-void placeNodes(Huf A[], char **tree);
-void placeORs(char **tree, Rect R);
-void TableInit(char **tree, Rect R);
-void placeDashes(char **tree, Rect R);
-void SDL(Huf *t, int depth);
-char** makeBufferTable(Huf A[], Rect *p);
-Rect findTableLimits(Huf A[]);
-int max(int a, int b);
-char** mallocTable(Rect R);
-void freeTable(char **Table, Rect R);
-void SDL_FREE(SDL_Simplewin *s);
+int findLeastFreq(Huf A[]);
 void findBranchLenght(Huf *t);
 int findMaxDepth(Huf *t,int depth);
 void mallocCodeStrings(Huf *t);
+void coding(Huf *t);
+Rect findNodeCoords(Huf *t, Rect C);
+char** makeBufferTable(Huf A[], Rect *p);
+Rect findTableLimits(Huf A[]);
+char** mallocTable(Rect R);
+void TableInit(char **tree, Rect R);
+void placeNodes(Huf A[], char **tree);
+void placeORs(char **tree, Rect R);
+void placeDashes(char **tree, Rect R);
+void SDL(char **tree, Huf *t, int depth,Rect R);
 int findTotBytes(Huf A[], int lenght);
+void N_SDL_print(Huf *t,int x,int maxDepth, SDL_Simplewin *s,fntrow fontdata[FNTCHARS][FNTHEIGHT]);
+void SDL_FREE(SDL_Simplewin *s);
 void freeCodeStrings(Huf *t);
-void N_SDL_print(Huf *t,int x,int depth, SDL_Simplewin *s,fntrow fontdata[FNTCHARS][FNTHEIGHT]);
+void freeTable(char **Table, Rect R);
+int max(int a, int b);
 
 int main(int argc, char **argv)
 {
   int i=0;
-  int depth=0;
+  int maxDepth=0;
   int totBytes=0;
   Rect R;
   Rect *pR=&R;
@@ -85,19 +80,16 @@ int main(int argc, char **argv)
   i=ScanArray(nodes);
   top=&nodes[i];
   findBranchLenght(top);
-  depth=findMaxDepth(top,depth);
-  printf("depth%d\n",depth );
+  maxDepth=findMaxDepth(top,0);
   mallocCodeStrings(top);
   coding(top);
-  findNodeX(top, R);
+  findNodeCoords(top, R);
   totBytes=findTotBytes(nodes,ASCII);
   printArray(nodes,ASCII);
   fprintf(stdout,"%d bytes\n",totBytes);
   freeCodeStrings(top);
   tree=makeBufferTable(nodes,pR);
-  /*qsort(auxnodes,2*ASCII,sizeof(Huf),sortfqc);*/
-  printScreen(tree,R);
-  SDL(top,depth);
+  SDL(tree,top,maxDepth,R);
   freeTable(tree,R);
   return 0;
 }
@@ -156,49 +148,52 @@ void freeTable(char **Table, Rect R)
   }
   free(Table);
 }
-void SDL(Huf *t, int depth)
+void SDL(char **tree, Huf *t, int maxDepth,Rect R)
 {
+  int i;
   SDL_Simplewin sw;
   SDL_Simplewin *s=&sw;
   fntrow fontdata[FNTCHARS][FNTHEIGHT];
-
-     Neill_SDL_Init(s, FNTWIDTH*(depth*10),FNTHEIGHT*(depth*5));
-     Neill_SDL_ReadFont(fontdata, (char *)FNTFILENAME);
-     while(!s->finished){
-
-    /*   for(i=0;i<=2*ASCII;i++){
-     Neill_SDL_SetDrawColour(s,10,100,100);
-     Neill_SDL_RenderFillCircle(s->renderer, FNTWIDTH*A[i].x+20/2, FNTHEIGHT*A[i].depth*2+20/2, 20);
-         Neill_SDL_DrawChar(s, fontdata,A[i].c, FNTWIDTH*A[i].x, FNTHEIGHT*(A[i].depth)*2);
-       }
-*/
-    N_SDL_print(t,4*depth,depth,s,fontdata);
-
-       SDL_RenderPresent(s->renderer);
-       SDL_UpdateWindowSurface(s->win);
-     Neill_SDL_Events(s);
-     }
-     SDL_FREE(s);
+  Neill_SDL_Init(s, FNTWIDTH*(maxDepth*10),FNTHEIGHT*(maxDepth*5));
+  Neill_SDL_ReadFont(fontdata, (char *)FNTFILENAME);
+  for(i=0;i<=R.height;i++){
+    Neill_SDL_DrawString(&sw, fontdata,tree[i], 0, FNTHEIGHT*(i+1));
+  }
+  SDL_RenderPresent(s->renderer);
+  SDL_UpdateWindowSurface(s->win);
+  Neill_SDL_SetDrawColour(s,10,100,100);
+  SDL_RenderClear(s->renderer);
+  while(!s->finished){
+    SDL_Delay(100);
+    N_SDL_print(t,4*maxDepth,maxDepth,s,fontdata);
+    SDL_RenderPresent(s->renderer);
+    SDL_UpdateWindowSurface(s->win);
+    Neill_SDL_Events(s);
+  }
+  SDL_FREE(s);
 
 }
-void N_SDL_print(Huf *t, int x,int depth, SDL_Simplewin *s,fntrow fontdata[FNTCHARS][FNTHEIGHT])
+void N_SDL_print(Huf *t, int x,int maxDepth, SDL_Simplewin *s,fntrow fontdata[FNTCHARS][FNTHEIGHT])
 {
+  int offset=0;
   if(t==NULL){
     return;
   }
+   Neill_SDL_SetDrawColour(s,255,255,255);
   if(t->parent!=NULL&&t->parentDirection==left){
-    SDL_RenderDrawLine(s->renderer, x*FNTWIDTH+FNTWIDTH/2, FNTHEIGHT*(t->depth*3-1/2),
-       t->parent->SDLx*FNTWIDTH+FNTWIDTH/2, FNTHEIGHT*(t->parent->depth*3-1/2));
+    SDL_RenderDrawLine(s->renderer, x*FNTWIDTH+FNTWIDTH/2, FNTHEIGHT*(t->depth*2-1/2),
+       t->parent->SDLx*FNTWIDTH+FNTWIDTH/2, FNTHEIGHT*(t->parent->depth*2-1/2));
   }
   if(t->parent!=NULL&&t->parentDirection==right){
-    SDL_RenderDrawLine(s->renderer, x*FNTWIDTH+FNTWIDTH/2, FNTHEIGHT*(t->depth*3-1/2),
-       t->parent->SDLx*FNTWIDTH+FNTWIDTH/2, FNTHEIGHT*(t->parent->depth*3-1/2));
+    SDL_RenderDrawLine(s->renderer, x*FNTWIDTH+FNTWIDTH/2, FNTHEIGHT*(t->depth*2-1/2),
+       t->parent->SDLx*FNTWIDTH+FNTWIDTH/2, FNTHEIGHT*(t->parent->depth*2-1/2));
   }
   t->SDLx=x;
-  Neill_SDL_DrawChar(s,fontdata, t->c, FNTWIDTH*x, FNTHEIGHT*t->depth*3);
+  Neill_SDL_DrawChar(s,fontdata, t->c, FNTWIDTH*x, FNTHEIGHT*t->depth*2);
+  offset=maxDepth-t->depth;
+  N_SDL_print(t->left, x-offset,maxDepth, s,fontdata);
+  N_SDL_print(t->right, x+offset,maxDepth, s,fontdata);
 
-  N_SDL_print(t->left, x-((findMaxDepth(t->left,0)+findMaxDepth(t->right,0)-2*t->depth)),depth,s,fontdata);
-  N_SDL_print(t->right, x+((findMaxDepth(t->right,0)+findMaxDepth(t->left,0)-2*t->depth)),depth,s,fontdata);
 }
 void SDL_FREE(SDL_Simplewin *s)
 {
@@ -319,20 +314,9 @@ int findMaxDepth(Huf *t,int depth)
   if(t==NULL){
     return depth;
   }
-    printf("%d\n",depth);
   depth=max(depth,t->depth);
   depth=max(findMaxDepth(t->left,depth),depth);
   depth=max(findMaxDepth(t->right,depth),depth);
-  return depth;
-}
-
-int findMaxDepth2(Huf A[])
-{
-  int i;
-  int depth=0;
-  for(i=0;i<2*ASCII;i++){
-   depth=max(A[i].depth, depth);
-  }
   return depth;
 }
 int max(int a, int b)
@@ -399,7 +383,7 @@ void coding(Huf *t)
   coding(t->left);
   coding(t->right);
 }
-Rect findNodeX(Huf *t, Rect C)
+Rect findNodeCoords(Huf *t, Rect C)
 {
   if(t==NULL){
     return C;
@@ -407,11 +391,11 @@ Rect findNodeX(Huf *t, Rect C)
   t->x=C.width+1;
   t->y=C.height+C.y;
   C.height++;
-  C=findNodeX(t->left, C);
+  C=findNodeCoords(t->left, C);
   C.y--;
   if(t->right!=NULL){
     C.width++;
-    C=findNodeX(t->right, C);
+    C=findNodeCoords(t->right, C);
   }
   return C;
 }
@@ -479,8 +463,8 @@ void printArray(Huf A[], unsigned int length)
         A[i].c,'"',A[i].code,A[i].bitLength,A[i].freq);
       }
       else{
-        fprintf(stdout,"%c%c%c : %20s (%3d * %7ld  x:%d , y:%d, depth: %d)\n",'"',
-        A[i].c,'"',A[i].code,A[i].bitLength,A[i].freq,A[i].x,A[i].y,A[i].depth);
+        fprintf(stdout,"%c%c%c : %20s (%3d * %7ld)\n",'"',
+        A[i].c,'"',A[i].code,A[i].bitLength,A[i].freq);
       }
     }
   }

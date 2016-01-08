@@ -42,7 +42,7 @@ void printScreen(char tree[][SCREEN_WIDTH]);
 void placeNodes(Huf A[], char tree[][SCREEN_WIDTH]);
 void placeORs(char tree[][SCREEN_WIDTH]);
 void TableInit(char tree[][SCREEN_WIDTH]);
-void placeDashes(char tree[][SCREEN_WIDTH]);
+void placeDashes(char tree[][SCREEN_WIDTH], Rect R);
 
 int main(int argc, char **argv)
 {
@@ -70,30 +70,33 @@ int main(int argc, char **argv)
   printArray(nodes,2*ASCII);
   makeBufferTable(nodes, treeView);
   printScreen(treeView);
-
   /*qsort(auxnodes,2*ASCII,sizeof(Huf),sortfqc);*/
   return 0;
 }
-void placeDashes(char tree[][SCREEN_WIDTH])
+void placeDashes(char tree[][SCREEN_WIDTH], Rect R)
 {
   int i,j,cnt;
-    for(j=0;j<SCREEN_WIDTH-1;j++){
-      if(!isgraph(tree[0][j])){
-        tree[0][j]='-';
-      }
-    }
   do{
     cnt=0;
-    for(i=0;i<SCREEN_HEIGHT-1;i++){
-      for(j=1;j<SCREEN_WIDTH;j++){
-        if(tree[i-1][j]==' '&&tree[i][j-1]==' '&&isgraph(tree[i][j])){
-          tree[i][j-1]='-';
-          cnt++;
+    for(i=0;i<R.height;i++){
+      for(j=1;j<=R.width;j++){
+        /*First row differs because there is no upper charachter to check*/
+        if(i==0){
+          if(tree[0][j-1]==' '&&isgraph(tree[0][j])){
+            tree[0][j-1]='-';
+            cnt++;
+          }
+        }
+         /*Rest of the table*/
+        else{
+          if(tree[i-1][j]==' '&&tree[i][j-1]==' '&&isgraph(tree[i][j])){
+            tree[i][j-1]='-';
+            cnt++;
+          }
         }
       }
     }
-  }while(cnt);
-}
+  }while(cnt);}
 void TableInit(char tree[][SCREEN_WIDTH])
 {
   int i,j;
@@ -133,12 +136,18 @@ void printScreen(char tree[][SCREEN_WIDTH])
   }
 }
 
-void makeBufferTable(Huf A[], char tree[][SCREEN_WIDTH])
+char** makeBufferTable(Huf A[], Rect *p)
 {
-  TableInit(tree);
+  char **tree;
+  Rect R;
+  R=findTableLimits(A);
+  *p=R;
+  tree=mallocTable(R);
+  TableInit(tree, R);
   placeNodes(A,tree);
-  placeORs(tree);
-  placeDashes(tree);
+  placeORs(tree, R);
+  placeDashes(tree, R);
+  return tree;
 }
 
 int sortfqc(const void *a, const void *b)
