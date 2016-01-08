@@ -1,0 +1,229 @@
+#include "neillsdl2.h"
+
+/*  Set up a simple (WIDTH, HEIGHT) window.
+   Attempt to hide the renderer etc. from user. */
+void Neill_SDL_Init(SDL_Simplewin *sw, int width, int height)
+{
+
+
+   if (SDL_Init(SDL_INIT_VIDEO) != 0) {
+      fprintf(stderr, "\nUnable to initialize SDL:  %s\n", SDL_GetError());
+      SDL_Quit();
+      exit(1);
+   }
+
+   sw->finished = 0;
+
+   sw->win= SDL_CreateWindow("SDL Window",
+                          SDL_WINDOWPOS_UNDEFINED,
+                          SDL_WINDOWPOS_UNDEFINED,
+                          width, height,
+                          SDL_WINDOW_SHOWN);
+   if(sw->win == NULL){
+      fprintf(stderr, "\nUnable to initialize SDL Window:  %s\n", SDL_GetError());
+      SDL_Quit();
+      exit(1);
+   }
+
+   sw->renderer = SDL_CreateRenderer(sw->win, -1, 0);
+   if(sw->renderer == NULL){
+      fprintf(stderr, "\nUnable to initialize SDL Renderer:  %s\n", SDL_GetError());
+      SDL_Quit();
+      exit(1);
+   }
+
+   /* Set screen to black */
+   Neill_SDL_SetDrawColour(sw, 0, 0, 0);
+   SDL_RenderClear(sw->renderer);
+   SDL_RenderPresent(sw->renderer);
+
+}
+
+/* Gobble all events & ignore most */
+void Neill_SDL_Events(SDL_Simplewin *sw)
+{
+   SDL_Event event;
+   while(SDL_PollEvent(&event))
+   {
+       switch (event.type){
+          case SDL_QUIT:
+          case SDL_MOUSEBUTTONDOWN:
+          case SDL_KEYDOWN:
+             sw->finished =1;
+       }
+    }
+}
+
+
+/* Trivial wrapper to avoid complexities of renderer & alpha channels */
+void Neill_SDL_SetDrawColour(SDL_Simplewin *sw, Uint8 r, Uint8 g, Uint8 b)
+{
+
+   SDL_SetRenderDrawColor(sw->renderer, r, g, b, SDL_ALPHA_OPAQUE);
+
+}
+
+/* Filled Circle centred at (cx,cy) of radius r, see :
+   http://content.gpwiki.org/index.php/SDL:Tutorials:Drawing_and_Filling_Circles */
+/*void Neill_SDL_RenderFillCircle(SDL_Renderer *rend, int cx, int cy, int r)
+{
+
+   double dy;
+   for (dy = 1; dy <= r; dy += 1.0) {
+        double dx = floor(sqrt((2.0 * r * dy) - (dy * dy)));
+        SDL_RenderDrawLine(rend, cx-dx, cy+r-dy, cx+dx, cy+r-dy);
+        SDL_RenderDrawLine(rend, cx-dx, cy-r+dy, cx+dx, cy-r+dy);
+   }
+
+}*/
+
+/* Circle centred at (cx,cy) of radius r, see :
+   http://content.gpwiki.org/index.php/SDL:Tutorials:Drawing_and_Filling_Circles */
+/*void Neill_SDL_RenderDrawCircle(SDL_Renderer *rend, int cx, int cy, int r)
+{
+
+   double dx, dy;
+   dx = floor(sqrt((2.0 * r ) ));
+   SDL_RenderDrawLine(rend, cx-dx, cy+r, cx+dx, cy+r);
+   SDL_RenderDrawLine(rend, cx-dx, cy-r, cx+dx, cy-r);
+   for (dy = 1; dy <= r; dy += 1.0) {
+        dx = floor(sqrt((2.0 * r * dy) - (dy * dy)));
+        SDL_RenderDrawPoint(rend, cx+dx, cy+r-dy);
+        SDL_RenderDrawPoint(rend, cx+dx, cy-r+dy);
+        SDL_RenderDrawPoint(rend, cx-dx, cy+r-dy);
+        SDL_RenderDrawPoint(rend, cx-dx, cy-r+dy);
+   }
+
+}
+
+void Neill_SDL_DrawString(SDL_Simplewin *sw, fntrow fontdata[FNTCHARS][FNTHEIGHT], char *str, int ox, int oy)
+{
+
+   int i=0;
+   unsigned char chr;
+   do{
+      chr = str[i++];
+      Neill_SDL_DrawChar(sw, fontdata, chr, ox+i*FNTWIDTH, oy);
+   }while(str[i]);
+}
+*/
+/*
+void drawContGraphics(SDL_Simplewin *sw, char A[6], CharStyle style)
+{
+  unsigned x, y;
+  short int dots[FNTHEIGHT][FNTWIDTH];
+  for(y = 0; y < FNTHEIGHT; y++){
+    for(x = 0; x < FNTWIDTH; x++){
+      if(dots[y][x]==1){
+        Neill_SDL_SetDrawColour(sw, style.character.r, style.character.g, style.character.b);
+        SDL_RenderDrawPoint(sw->renderer, x + style.ox, y+style.oy);
+      }
+      else {
+        Neill_SDL_SetDrawColour(sw, style.background.r, style.background.g, style.background.b);
+        SDL_RenderDrawPoint(sw->renderer, x + style.ox, y+style.oy);
+      }
+    }
+  }
+}*/
+void Neill_SDL_DrawChar(SDL_Simplewin *sw, fntrow fontdata[FNTCHARS][FNTHEIGHT], unsigned char chr, CharStyle style)
+{
+
+   unsigned x, y;
+   switch (style.height) {
+     case singleH:
+     case doubleH1:
+     case doubleH2:
+       break;
+   }
+   for(y = 0; y < FNTHEIGHT; y++){
+      for(x = 0; x < FNTWIDTH; x++){
+         if(fontdata[chr-FNT1STCHAR][y] >> (FNTWIDTH - 1 - x) & 1){
+            /*printf("*");*/
+            /* White Ink */
+            Neill_SDL_SetDrawColour(sw, style.character.r, style.character.g, style.character.b);
+            SDL_RenderDrawPoint(sw->renderer, x + style.ox, y+style.oy);
+         }
+         else{
+            /*printf(".");*/
+            /* Black Ink */
+            Neill_SDL_SetDrawColour(sw, style.background.r, style.background.g, style.background.b);
+            SDL_RenderDrawPoint(sw->renderer, x + style.ox, y+style.oy);
+         }
+      }
+   }
+
+}
+
+void Neill_SDL_DrawDoubleChar(SDL_Simplewin *sw, fntrow fontdata[FNTCHARS][FNTHEIGHT], unsigned char chr, CharStyle style)
+{
+
+   unsigned x, y;
+if(style.height==doubleH1){
+
+   for(y = 0; y < FNTHEIGHT/2; y++){
+      for(x = 0; x < FNTWIDTH; x++){
+         if(fontdata[chr-FNT1STCHAR][y] >> (FNTWIDTH - 1 - x) & 1){
+            /*printf("*");*/
+            /* White Ink */
+            Neill_SDL_SetDrawColour(sw, style.character.r, style.character.g, style.character.b);
+            SDL_RenderDrawPoint(sw->renderer, x + style.ox, 2*y+style.oy);
+            SDL_RenderDrawPoint(sw->renderer, x + style.ox, 2*y+style.oy+1);
+         }
+         else{
+            /*printf(".");*/
+            /* Black Ink */
+            Neill_SDL_SetDrawColour(sw, style.background.r, style.background.g, style.background.b);
+            SDL_RenderDrawPoint(sw->renderer, x + style.ox, 2*y+style.oy);
+            SDL_RenderDrawPoint(sw->renderer, x + style.ox, 2*y+style.oy+1);
+         }
+      }
+   }
+}
+else if(style.height==doubleH2){
+  for(y = 0; y < FNTHEIGHT; y++){
+     for(x = 0; x < FNTWIDTH; x++){
+        if(fontdata[chr-FNT1STCHAR][y+FNTHEIGHT/2] >> (FNTWIDTH - 1 - x) & 1){
+           /*printf("*");*/
+           /* White Ink */
+           Neill_SDL_SetDrawColour(sw, style.character.r, style.character.g, style.character.b);
+           SDL_RenderDrawPoint(sw->renderer, x + style.ox, 2*y+style.oy+1);
+           SDL_RenderDrawPoint(sw->renderer, x + style.ox, 2*y+style.oy);
+        }
+        else{
+           /*printf(".");*/
+           /* Black Ink */
+           Neill_SDL_SetDrawColour(sw, style.background.r, style.background.g, style.background.b);
+           SDL_RenderDrawPoint(sw->renderer, x + style.ox, 2*y+style.oy+1);
+           SDL_RenderDrawPoint(sw->renderer, x + style.ox, 2*y+style.oy);
+        }
+     }
+  }
+}
+}
+
+void Neill_SDL_ReadFont(fntrow fontdata[FNTCHARS][FNTHEIGHT], char *fname)
+{
+
+    FILE *fp = fopen(fname, "rb");
+    size_t itms;
+    if(!fp){
+       fprintf(stderr, "Can't open Font file %s\n", fname);
+       exit(1);
+   }
+   itms = fread(fontdata, sizeof(fntrow), FNTCHARS*FNTHEIGHT, fp);
+   if(itms != FNTCHARS*FNTHEIGHT){
+       fprintf(stderr, "Can't read all Font file %s (%d) \n", fname, (int)itms);
+       exit(1);
+   }
+   fclose(fp);
+
+}
+void SDL_FREE(SDL_Simplewin *sw)
+{
+  SDL_RenderClear(sw->renderer);
+  SDL_DestroyRenderer(sw->renderer);
+  SDL_DestroyWindow(sw->win);
+  sw->renderer=NULL;
+  sw->win=NULL;
+  SDL_Quit();
+}
