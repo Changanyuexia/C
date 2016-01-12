@@ -2,8 +2,8 @@
 #include <math.h>
 #include "teletext.h"
 
-#define WWIDTH 1150
-#define WHEIGHT 600
+#define WWIDTH WIDTH*FNTWIDTH
+#define WHEIGHT HEIGHT*FNTHEIGHT
 
 
 
@@ -28,8 +28,8 @@ void Neill_SDL_RenderFillCircle(SDL_Renderer *rend, int cx, int cy, int r);
 void Neill_SDL_RenderDrawCircle(SDL_Renderer *rend, int cx, int cy, int r);
 /*void Neill_SDL_DrawChar(SDL_Simplewin *sw, fntrow fontdata[FNTCHARS][FNTHEIGHT], unsigned char chr, int ox, int oy);*/
 void Neill_SDL_DrawChar(SDL_Simplewin *sw, fntrow fontdata[FNTCHARS][FNTHEIGHT], unsigned char chr, CharStyle style);
-void Neill_SDL_DrawDoubleChar(SDL_Simplewin *sw, fntrow fontdata[FNTCHARS][FNTHEIGHT], unsigned char chr, CharStyle style);
 void Neill_SDL_DrawString(SDL_Simplewin *sw, fntrow fontdata[FNTCHARS][FNTHEIGHT], char *str, int ox, int oy);
 void Neill_SDL_ReadFont(fntrow fontdata[FNTCHARS][FNTHEIGHT], char *fname);
-void Neill_SDL_ReadDoubleFont(fntrow fontdata[FNTCHARS][2*FNTHEIGHT], char *fname);
 void SDL_FREE(SDL_Simplewin *sw);
+void DrawSixel(SDL_Simplewin sw, CharStyle style, int code);
+void Neill_SDL_ReadFontChar(fntrow fontdata[FNTCHARS][FNTHEIGHT], char *fname);

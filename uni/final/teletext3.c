@@ -1,6 +1,9 @@
 /*ERROR
-  1.New background reads color from previous or next character??
-  2.No background color for lfc.m7 or panda.m7 */
+  1.New background reads color from previous or next character or ??
+  2.No background color for lfc.m7 or panda.m7
+  3.new color graphics code implies contiguous????
+  4.
+   */
 /*-------EXTENSION---------------------
   1.IMAGE TO TELETEXT code
   2.IMAGE TO FONT*/
@@ -17,8 +20,6 @@
 #include <assert.h>
 #include "neillsdl2.h"
 
-void DrawSixel(SDL_Simplewin sw, CharStyle style, int code);
-void DrawChar(SDL_Simplewin sw, fntrow fontdata[FNTCHARS][FNTHEIGHT], CharStyle style,unsigned char c);
 
 
 int main(int argc, char** argv)
@@ -33,9 +34,11 @@ int main(int argc, char** argv)
   /*printArray(A);*/
   parseForStyle(style,A);
   SDL(style,A);
+  free(A);
+  printf("%d of %d PASSED\n",TOT_TESTS-test(argv[1], verbose), TOT_TESTS);
   return SUCCESS;
 }
-unsigned char **mallocArray(int width ,int height)
+unsigned char **mallocArray(int height ,int width)
 {
   int i;
   unsigned char **A;
@@ -72,15 +75,14 @@ unsigned char **fileInput(char *s)
   A = mallocArray( HEIGHT , WIDTH );
   assert(A!=NULL);
   for(i=0; i<HEIGHT;i++ ){
-    printf("\n%d. ",i +1);
+  /*  printf("\n%d. ",i +1);*/
     for(j=0; j<WIDTH;j++){
       assert(fread(&A[i][j],1,1,fp));
-        printf("%hu  ", A[i][j] );
+        /*printf("%hu  ", A[i][j] );*/
 
     }
-    printf("\n");
+    /*printf("\n");*/
   }
-  printf("short int :%lu , char, %lu\n",sizeof(short int),sizeof(unsigned char) );
   fclose(fp);
   return A;
 }
@@ -106,6 +108,8 @@ void parseForStyle(CharStyle style[HEIGHT][WIDTH], unsigned char **A)
   for(i=0;i<HEIGHT;i++){
     tempStyle=reset(tempStyle);
     for(j=0;j<WIDTH;j++){
+      tempStyle.ox=j*FNTWIDTH;
+      tempStyle.oy=i*FNTHEIGHT;
       if(FRSTCNTRLGRAPH<A[i][j]&&A[i][j]<LSTCNTRLGRAPH){
         tempStyle.dMode=graph;
         if(FRSTCNTRLGRAPH<=A[i][j]&&A[i][j]<=151){
@@ -113,12 +117,14 @@ void parseForStyle(CharStyle style[HEIGHT][WIDTH], unsigned char **A)
           if(tempStyle.grMode!=hold){
             tempStyle.grMode=contiguous;
           }
-          printf("%d\n",A[i][j] );
           if(style[i][j-1].holdCnt!=0){
           tempStyle.holdCnt=style[i][j-1].holdCnt+1;
           }
         }
          switch (A[i][j]) {
+           case releaseG:
+             tempStyle=gmodeCheck(tempStyle, A[i][j-style[i][j-1].holdCnt]);
+             break;
            case holdG:
              tempStyle.holdCnt=1;
            case contiguousG:
@@ -196,6 +202,12 @@ Color changeColor(Color col, unsigned char code)
     case white:
       col.g=col.r=col.b=255;
       break;
+      /*I Belive this shouldn't be here.
+      I'm only including it because in the panda.m7 and lfc.m7
+      before the new background code (9D) it doesn't provide with
+      a color code so it stays black*/
+    default:
+       col.g=col.r=col.b=255;
   }
 
   return col;
@@ -265,87 +277,34 @@ decodeSixels(dots,i);
 }
 }
 */
-void renderPattern(SDL_Simplewin *sw, CharStyle style , int graphdata[3][2], SDL_Rect rectSixel, SDL_Rect rectBack)
-{
-  int i,j;
-  rectBack.x=style.ox;
-  rectBack.y=style.oy;
-  printf("%d  %d  %d\n", style.background.r, style.background.g, style.background.b);
-  Neill_SDL_SetDrawColour(sw,style.background.r, style.background.g, style.background.b);
-  SDL_RenderFillRect(sw->renderer,&rectBack );
-  for(i=0;i<3;i++){
-    for(j=0;j<2;j++){
-      if(graphdata[i][j]==1){
-        Neill_SDL_SetDrawColour(sw,style.graphics.r, style.graphics.g, style.graphics.b);
-        switch (style.grMode) {
-          case hold:
-          case contiguous:
-            rectSixel.x=style.ox+j*rectSixel.w;
-            rectSixel.y=style.oy+i*rectSixel.h;
-            break;
-          case separated:
-            rectSixel.x=style.ox+j*rectSixel.w+2*j;
-            rectSixel.y=style.oy+i*rectSixel.h+2*i;
-            break;
-
-        }
-        SDL_RenderFillRect(sw->renderer,&rectSixel );
-      }
-    }
-  }
-}
-void DrawSixel(SDL_Simplewin sw, CharStyle style,int code)
-{
-  int graphdata[3][2];
-  SDL_Rect rectBack,rectSixel;
-  rectBack.h=FNTHEIGHT;
-  rectBack.w=FNTWIDTH;
-  decodeSixels(graphdata, code);
-  switch (style.grMode) {
-    case hold:
-    case contiguous:
-      rectSixel.h=FNTHEIGHT/3;
-      rectSixel.w=FNTWIDTH/2;
-      renderPattern(&sw, style, graphdata, rectSixel,rectBack);
-      break;
-    case separated:
-      rectSixel.h=4;
-      rectSixel.w=6;
-      renderPattern(&sw, style, graphdata, rectSixel,rectBack);
-      break;
-  }
-
-
-}
-void DrawChar(SDL_Simplewin sw,fntrow fontdata[FNTCHARS][FNTHEIGHT], CharStyle style, unsigned char c)
-{
-
-  switch (style.height) {
-    case singleH:
-      Neill_SDL_DrawChar(&sw, fontdata, c-128, style);
-      break;
-    case doubleH1:
-    case doubleH2:
-      Neill_SDL_DrawDoubleChar(&sw, fontdata, c-128, style);
-      break;
-  }
-}
 void SDL(CharStyle style[HEIGHT][WIDTH], unsigned char **A)
 {
   int i,j;
   SDL_Simplewin sw;
   fntrow fontdata[FNTCHARS][FNTHEIGHT];
+  fntrow fontA[FNTCHARS][FNTHEIGHT];
+  sw.finished=0;
   Neill_SDL_ReadFont(fontdata,(char*) FNTFILENAME);
-  Neill_SDL_Init(&sw, WIDTH*FNTWIDTH,HEIGHT*FNTHEIGHT);
+  Neill_SDL_ReadFontChar(fontA,(char *)"font/fullfont.m7");
+    for(j=0;j<93;j++){
+  for(i=0;i<FNTHEIGHT;i++){
+
+    fntrow temp=fontA[j][i]<<8;
+   fontdata[j][i]=fontA[j][i]>>8|temp;
+    }
+  }
+/*  Neill_SDL_ReadFontChar(fontA,"fontB.m7");
+  for(i=0;i<FNTHEIGHT;i++){
+    fntrow temp=fontA[i]<<8;
+   fontdata['B'-32][i]=fontA[i]>>8|temp;
+ }*/
+  Neill_SDL_Init(&sw, WWIDTH,WHEIGHT);
   for(i=0;i<HEIGHT;i++){
     for(j=0;j<WIDTH;j++){
-      printf("%d\n",0x24 );
-      style[i][j].ox=j*FNTWIDTH;
-      style[i][j].oy=i*FNTHEIGHT;
       if(style[i][j].dMode==graph && style[i][j].grMode!=hold){
         if(192<=A[i][j]&&A[i][j]<=223){
           style[i][j].character=style[i][j].graphics;
-          DrawChar(sw, fontdata, style[i][j], A[i][j]);
+          Neill_SDL_DrawChar(&sw, fontdata, A[i][j]-128, style[i][j]);
         }
         else{
           DrawSixel(sw,style[i][j], A[i][j]);
@@ -354,13 +313,24 @@ void SDL(CharStyle style[HEIGHT][WIDTH], unsigned char **A)
       else if (style[i][j].dMode==graph && style[i][j].grMode==hold){
         DrawSixel(sw,style[i][j],A[i][j-style[i][j].holdCnt]);
       }
-      else if(style[i][j].dMode==alpha && (isprint(A[i][j]-128) || A[i][j]==255)){
-        DrawChar(sw, fontdata, style[i][j], A[i][j]);
+      /* else if(A[i][j]-128=='A'){
+         Neill_SDL_DrawChar(&sw, fontA, A[i][j]-128, style[i][j]);
+       }*/
+      else if(style[i][j].dMode==alpha && (isprint(A[i][j]-128)||isprint(A[i][j]) || A[i][j]==255)){
+        Neill_SDL_DrawChar(&sw, fontdata, A[i][j]-128, style[i][j]);
       }
       else{
-        DrawChar(sw, fontdata, style[i][j], SPACE_CHAR );}
+        Neill_SDL_DrawChar(&sw, fontdata, SPACE_CHAR, style[i][j]);
+      }
     }
   }
+    do{
+      SDL_RenderPresent(sw.renderer);
+      SDL_Delay(FRAMERATE);
+      Neill_SDL_Events(&sw);
+    }while(!sw.finished);
+  SDL_FREE(&sw);
+}
   /*
   SDL_RenderPresent(sw.renderer);
 
@@ -374,13 +344,8 @@ void SDL(CharStyle style[HEIGHT][WIDTH], unsigned char **A)
     Neill_SDL_DrawChar(&sw, fontdata, k++, FNTWIDTH*j, FNTHEIGHT*i);
     }
   }*/
-  SDL_RenderPresent(sw.renderer);
 
 
-  SDL_Delay(5000);
-
-  SDL_FREE(&sw);
-}
 
 /*es para luego experimentos de fonts
 
