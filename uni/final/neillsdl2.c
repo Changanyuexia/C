@@ -51,9 +51,9 @@ void Neill_SDL_DrawChar(SDL_Simplewin *sw, fntrow fontdata[FNTCHARS][FNTHEIGHT],
 {
 
    unsigned x, y,oy=0,index_y=0;
-   if(chr>128){
+   /*if(chr>128){
     chr-=128;
-  }
+  } CUIDAAAAOOOO*/
 
    for(y = 0; y < FNTHEIGHT; y++){
       for(x = 0; x < FNTWIDTH; x++){

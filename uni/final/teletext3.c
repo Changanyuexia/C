@@ -6,7 +6,10 @@
    */
 /*-------EXTENSION---------------------
   1.IMAGE TO TELETEXT code
-  2.IMAGE TO FONT*/
+  2.IMAGE TO FONT
+  ---change font control code
+  ---resize image properly*/
+
 /*-------CHECKS TO BE PERFORMED---------
   1.Error messages and printing
   2.Malloc / Free
@@ -14,16 +17,19 @@
   --------TASKS-------------------------
   1. Fix dependencies
 */
-/*Message input HERE*/
+/*
+This program is a Teletext decoder. Input binary files that
+represent Teletext signal values after digitilization.
+Output a full 40x25 Teletext screen.                       */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
 #include "neillsdl2.h"
 
-
-
 int main(int argc, char** argv)
 {
+  TestResults result;
   CharStyle style[HEIGHT][WIDTH];
   unsigned char **A;
   if(argc !=2 ){
@@ -31,11 +37,12 @@ int main(int argc, char** argv)
     exit(ERROR);
   }
   A=fileInput(argv[1]);
-  /*printArray(A);*/
+  printArray(A);
   parseForStyle(style,A);
   SDL(style,A);
   free(A);
-  printf("%d of %d PASSED\n",TOT_TESTS-test(argv[1], verbose), TOT_TESTS);
+  result = test(argv[1], verbose);
+  printf("%d of %d PASSED\n",result.passed, result.total);
   return SUCCESS;
 }
 unsigned char **mallocArray(int height ,int width)
@@ -282,17 +289,17 @@ void SDL(CharStyle style[HEIGHT][WIDTH], unsigned char **A)
   int i,j;
   SDL_Simplewin sw;
   fntrow fontdata[FNTCHARS][FNTHEIGHT];
-  fntrow fontA[FNTCHARS][FNTHEIGHT];
+  /*fntrow fontA[FNTCHARS][FNTHEIGHT];*/
   sw.finished=0;
   Neill_SDL_ReadFont(fontdata,(char*) FNTFILENAME);
-  Neill_SDL_ReadFontChar(fontA,(char *)"font/fullfont.m7");
+/*  Neill_SDL_ReadFontChar(fontA,(char *)"font/fontblur.m7");
     for(j=0;j<93;j++){
   for(i=0;i<FNTHEIGHT;i++){
 
     fntrow temp=fontA[j][i]<<8;
    fontdata[j][i]=fontA[j][i]>>8|temp;
     }
-  }
+  }*/
 /*  Neill_SDL_ReadFontChar(fontA,"fontB.m7");
   for(i=0;i<FNTHEIGHT;i++){
     fntrow temp=fontA[i]<<8;
@@ -331,29 +338,3 @@ void SDL(CharStyle style[HEIGHT][WIDTH], unsigned char **A)
     }while(!sw.finished);
   SDL_FREE(&sw);
 }
-  /*
-  SDL_RenderPresent(sw.renderer);
-
-
-  SDL_Delay(1000);
-  Neill_SDL_SetDrawColour(&sw, 0, 0, 0);
-  SDL_RenderClear(sw.renderer);
-
-  for(i=0;i<HEIGHT && k<FNTCHARS+FNT1STCHAR ;i++){
-    for(j=0;j<WIDTH ;j++){
-    Neill_SDL_DrawChar(&sw, fontdata, k++, FNTWIDTH*j, FNTHEIGHT*i);
-    }
-  }*/
-
-
-
-/*es para luego experimentos de fonts
-
-
-fntrow fontDouble[FNTCHARS][2*FNTHEIGHT];
-for(i=FNT1STCHAR;i<FNT1STCHAR+20;i++){
-  for(j=0;j<FNTWIDTH;j++){
-    printf("%hu ",fontdata[i][j]);
-  }
-  printf("\n");
-}*/
