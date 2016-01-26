@@ -7,7 +7,7 @@
 #define TESTFILE "test.m7"
 /*#include "neillsdl2.h"
 */
-TestResults test(char *s, int mode)
+TestResults test(int mode)
 {
   FILE *fp;
   TestResults result;
@@ -183,22 +183,22 @@ int T_gmodeCheck(int mode)
   int cnt=0;
   CharStyle style;
   style=reset(style);
-  style=gmodeCheck(style, holdG);
+  gmodeCheck(&style, holdG);
   if(style.grMode!=hold){
     cnt++;
   }
   style=reset(style);
-  style=gmodeCheck(style, contiguousG);
+  gmodeCheck(&style, contiguousG);
   if(style.grMode!=contiguous){
     cnt++;
   }
   style=reset(style);
-  style=gmodeCheck(style, separetedG);
+  gmodeCheck(&style, separetedG);
   if(style.grMode!=separated){
     cnt++;
   }
   style=reset(style);
-  style=gmodeCheck(style, 0xA5);
+  gmodeCheck(&style, 0xA5);
   if(style.grMode!=contiguous){
     cnt++;
   }

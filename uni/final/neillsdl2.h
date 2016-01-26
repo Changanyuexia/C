@@ -1,6 +1,6 @@
 #include <SDL2/SDL.h>
 #include <math.h>
-#include "teletext.h" 
+#include "teletext.h"     
 
 #define WWIDTH WIDTH*FNTWIDTH
 #define WHEIGHT HEIGHT*FNTHEIGHT

@@ -68,7 +68,7 @@ unsigned char **fileInput(char *s);
 unsigned char **mallocArray(int height ,int width);
 void freeArray(unsigned char **A, int height);
 
-TestResults test(char *s, int mode);
+TestResults test(int mode);
 int isSixel(int code);
 int isCntrlGraph(int code);
 int isCntrlAlhpa(int code);
@@ -77,7 +77,10 @@ int isHeight(int code);
 Color setColor(int clr);
 CharStyle setCoordinates(CharStyle style, int x, int y);
 void parseForStyle(CharStyle style[HEIGHT][WIDTH], unsigned char **A);
-CharStyle gmodeCheck(CharStyle style,unsigned char ctrl);
+void asignGraphicsStyle(CharStyle *tempStyle, CharStyle style[HEIGHT][WIDTH], unsigned char **A );
+void asignAlphaStyle(CharStyle *tempStyle, CharStyle style[HEIGHT][WIDTH], unsigned char code); 
+
+void gmodeCheck(CharStyle *style,unsigned char ctrl);
 CharHeight changeHeight(unsigned char code);
 CharStyle changeGraphStyle(CharStyle style,  unsigned char code);
 CharStyle reset(CharStyle style);

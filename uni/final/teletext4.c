@@ -12,20 +12,22 @@ Output a full 40x25 Teletext screen.                       */
 #include "neillsdl2.h"
 
 void printStyle(CharStyle style, unsigned char c);
-
+void printHelp();
 int main(int argc, char** argv)
 {
   TestResults result;
   CharStyle style[HEIGHT][WIDTH];
+
   unsigned char **A;
   if(argc !=2 ){
     if(argc==1){
-      result = test(argv[1], verbose);
+      result = test(verbose);
       fprintf(stdout,"%d of %d PASSED\n",result.passed, result.total);
       return SUCCESS;
     }
     else{
       fprintf(stderr, "Bad Arguments\n");
+      printHelp();
       exit(ERROR);
     }
   }
@@ -69,10 +71,11 @@ unsigned char **mallocArray(int height ,int width)
   }
   return A;
 }
-void asignGraphics(CharStyle *tstyle, CharStyle style,unsigned char **A)
-{
-  
-}
+
+/*The logic of this function is such:
+  it creates a temporary style instance which
+  gets passed from function to function so on
+  line of TELETEXT can keep previous formats*/
 void parseForStyle(CharStyle style[HEIGHT][WIDTH], unsigned char **A)
 {
   CharStyle tempStyle;
@@ -88,53 +91,10 @@ void parseForStyle(CharStyle style[HEIGHT][WIDTH], unsigned char **A)
       tempStyle=setCoordinates(tempStyle, j*FNTWIDTH, i*FNTHEIGHT);
       if(FRSTCNTRLGRAPH<A[i][j]&&A[i][j]<LSTCNTRLGRAPH){
         tempStyle.dMode=graph;
-        if(isCntrlGraph(A[i][j])){
-          tempStyle.graphics=setColor(A[i][j]);
-          if(tempStyle.grMode!=hold){
-            tempStyle.grMode=contiguous;
-          }
-          if(style[i][j-1].holdCnt!=0){
-          tempStyle.holdCnt=style[i][j-1].holdCnt+1;
-          }
-        }
-         switch (A[i][j]) {
-           case releaseG:
-             tempStyle=gmodeCheck(tempStyle, A[i][j-style[i][j-1].holdCnt]);
-             break;
-           case holdG:
-             tempStyle.holdCnt=1;
-           case contiguousG:
-           case separetedG:
-             tempStyle=gmodeCheck(tempStyle, A[i][j]);
-             break;
-           case newBack:
-             if(isCntrlAlhpa(A[i][j-1])){
-               tempStyle.background = setColor(A[i][j-1]);
-             }
-             else{
-               tempStyle.background = setColor(white);
-             }
-             break;
-           case blackBack:
-             tempStyle.background=setColor(black);
-             break;
-         }
+                asignGraphicsStyle(&tempStyle,style,A);
       }
-      if(isCntrlAlhpa(A[i][j]) || isHeight(A[i][j])){
-        tempStyle.dMode=alpha;
-        if(isHeight(A[i][j])){
-          if(i!=0){
-            tempStyle.height=changeHeight(A[i][j]);
-          }
-        }
-        else{
-          tempStyle.character = setColor(A[i][j]);
-        }
-      }
-      if(i!=0 && tempStyle.height!=singleH && style[i-1][j].height==doubleH1){
-        tempStyle.height=doubleH2;
-      }
-      style[i][j]=tempStyle;
+      asignAlphaStyle(&tempStyle ,style, A[i][j]);
+            style[i][j]=tempStyle;
     }
   }
 }
@@ -149,6 +109,62 @@ CharStyle reset(CharStyle style)
   style.holdCnt=0;
   return style;
 }
+void asignGraphicsStyle(CharStyle *tempStyle, CharStyle style[HEIGHT][WIDTH], unsigned char **A )
+{
+  int i=tempStyle->oy/FNTHEIGHT;
+  int j=tempStyle->ox/FNTWIDTH;
+  if(isCntrlGraph(A[i][j])){
+    tempStyle->graphics=setColor(A[i][j]);
+    if(tempStyle->grMode!=hold){
+      tempStyle->grMode=contiguous;
+    }
+    if(style[i][j-1].holdCnt!=0){
+    tempStyle->holdCnt=style[i][j-1].holdCnt+1;
+    }
+  }
+  switch (A[i][j]) {
+    case releaseG:
+      gmodeCheck(tempStyle, A[i][j-style[i][j-1].holdCnt]);
+      break;
+    case holdG:
+      tempStyle->holdCnt=1;
+    case contiguousG:
+    case separetedG:
+      gmodeCheck(tempStyle, A[i][j]);
+      break;
+    case newBack:
+      if(isCntrlAlhpa(A[i][j-1])){
+        tempStyle->background = setColor(A[i][j-1]);
+      }
+      else{
+        tempStyle->background = setColor(white);
+      }
+      break;
+    case blackBack:
+      tempStyle->background=setColor(black);
+      break;
+  }
+}
+void asignAlphaStyle(CharStyle *tempStyle, CharStyle style[HEIGHT][WIDTH], unsigned char code)
+{
+  int i=tempStyle->oy/FNTHEIGHT;
+  int j=tempStyle->ox/FNTWIDTH;
+  if(isCntrlAlhpa(code) || isHeight(code)){
+    tempStyle->dMode=alpha;
+    if(isHeight(code)){
+      if(i!=0){
+        tempStyle->height=changeHeight(code);
+      }
+    }
+    else{
+      tempStyle->character = setColor(code);
+    }
+  }
+  if(i!=0 && tempStyle->height!=singleH && style[i-1][j].height==doubleH1){
+    tempStyle->height=doubleH2;
+  }
+}
+
 Color setColor(int clr)
 {
   Color c;
@@ -198,27 +214,25 @@ Color setColor(int clr)
   }
   return c;
 }
-
 CharStyle setCoordinates(CharStyle style, int x, int y)
 {
     style.ox=x;
     style.oy=y;
     return style;
 }
-CharStyle gmodeCheck(CharStyle style,unsigned char ctrl)
+void gmodeCheck(CharStyle *style,unsigned char ctrl)
 {
   switch (ctrl) {
     case contiguousG:
-      style.grMode=contiguous;
+      style->grMode=contiguous;
       break;
     case separetedG:
-      style.grMode=separated;
+      style->grMode=separated;
       break;
     case holdG:
-      style.grMode=hold;
+      style->grMode=hold;
       break;
   }
-  return style;
 }
 CharHeight changeHeight( unsigned char code)
 {
@@ -249,6 +263,10 @@ void printArray(unsigned char **A)
     }
     printf("\n");
   }
+}
+void putTLTXTCharWin()
+{
+  
 }
 void SDL(CharStyle style[HEIGHT][WIDTH], unsigned char **A)
 {
@@ -358,6 +376,16 @@ int isGraphMode(int code)
     default:
       return 0;
       break;
+  }
+}
+void printHelp()
+{
+  FILE *fp;
+  char c;
+  fp=fopen("ReadMe.txt","r");
+  assert(fp!=NULL);
+  while ( (c = fgetc(fp) ) != EOF){
+    putchar(c);
   }
 }
 /*this is a auxiliary function to perform visual style check*/
