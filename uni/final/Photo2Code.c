@@ -8,7 +8,7 @@
 #define FNTWIDTH  16
 #define WHEIGHT 25
 #define WWIDTH 40
-#define THRESHOLD 66
+#define THRESHOLD 95
 #define OUTPUTFILE "image.m7"
 #define BLUR_KERNELSIZE 5
 
@@ -87,7 +87,7 @@ void addTitle(char totalString[10000])
   char tot[WWIDTH];
   char temp[2*WWIDTH];
   int i=0,j;
-  strcpy(tot,"           THE BRISTOL TOWER      \0");
+  strcpy(tot,"           THE BRISTOL TOWER       \0");
   for (j=0;j<(int)strlen(tot);j++){
     sprintf(temp,"%2x",tot[j]);
     totalString[i++]=temp[0];

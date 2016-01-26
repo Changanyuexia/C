@@ -1,30 +1,12 @@
 #include <stdio.h>
 #include <time.h>
 #include <SDL2/SDL.h>
+#include "test.h"
 #include "teletext.h"
+
+#define TESTFILE "test.m7"
 /*#include "neillsdl2.h"
 */
-#define LOGNAME "test_log.txt"
-#define FORMT "--------------------------"
-#define FAIL "\x1B[31mFAILED\x1B[0m"
-#define PASS "\x1B[32mPASSED\x1B[0m"
-
-#ifdef __STDC_LIB_EXT1__
-  char str[26];
-  ctime_s(str,sizeof str,&results);
-  printf("%s", str);
-#endif
-
-
-int T_gmodeCheck(int mode);
-int T_mallocArray(unsigned char **A, int mode);
-int T_parseForStyle(unsigned char **A, char *s, int mode);
-int T_reset(int mode);
-int T_changeColor(int mode);
-int T_SDL(int mode);
-int T_changeHeight(int mode);
-int T_decodeSixels(int mode);
-
 TestResults test(char *s, int mode)
 {
   FILE *fp;
@@ -34,8 +16,13 @@ TestResults test(char *s, int mode)
   time_t t = time(NULL);
   result.passed=0;
   fp=fopen(LOGNAME, "w");
+  if(fp==NULL){
+    printf("mierda\n" );
+  }
   fprintf(fp,"%s%s\n", ctime(&t),FORMT);
   fclose(fp);
+  printf("%d.",i+1 );
+  cnt[i++]=T_isSixel(mode);
   printf("%d.",i+1 );
   cnt[i++] = T_reset(mode);
   printf("%d.",i+1 );
@@ -43,15 +30,15 @@ TestResults test(char *s, int mode)
   printf("%d.",i+1 );
   cnt[i++] = T_mallocArray(A, mode);
   printf("%d.",i+1 );
-  cnt[i++] = T_parseForStyle(A,s, mode);
+  cnt[i++] = T_parseForStyle(A,(char*)TESTFILE, mode);
   printf("%d.",i+1 );
   cnt[i++] = T_changeHeight(mode);
   printf("%d.",i+1 );
-  cnt[i++] = T_changeColor(mode);
+  cnt[i++] = T_setColor(mode);
   printf("%d.",i+1 );
   cnt[i++] = T_decodeSixels(mode);
   printf("%d.",i+1 );
-  cnt[i++] = T_SDL(mode);
+  cnt[i] = T_SDL(mode);
   result.total = i;
   for(i=0; i<result.total; i++){
     if(cnt[i] == SUCCESS)
@@ -59,38 +46,12 @@ TestResults test(char *s, int mode)
   }
   return result;
 }
-int T_decodeSixels(int mode)
+int T_isSixel(int mode)
 {
-  int i,j,cnt=0;
-  int dots[3][2];
-  FILE *fp;
-  int testCodeValue=0xB8;
-  fp=fopen(LOGNAME,"a");
-  fprintf(fp, "%s\nTesting %s %#X\n%s\n",FORMT,__func__,testCodeValue,FORMT );
-  decodeSixels(dots,testCodeValue);
-  if   (dots[0][0]!=0||dots[0][1]!=0||
-        dots[1][0]!=0||dots[1][1]!=1||
-        dots[1][0]!=0||dots[1][1]!=1){
-    cnt++;
+  if(isSixel(0xAE)==1&&mode==verbose){
+    printf( "Sixel test 0xB8 %s\n",  PASS );
   }
-  else{
-    for(i=0;i<3;i++){
-      for(j=0;j<2;j++){
-        fprintf(fp,"%d", dots[i][j]);
-      }
-      fprintf(fp,"\n");
-    }
-    fprintf(fp, "Sixel test 0xB8 %s\n","   PASSED" );
-  }
-  if(mode==verbose &&cnt==0)
-    printf("%15s %s\n",__func__, PASS );
-  else
-    printf("%15s %s\n",__func__, FAIL );
-  if(cnt==0)
-    return SUCCESS;
-  else
-    return ERROR;
-
+  return 0;
 }
 int T_changeHeight(int mode)
 {
@@ -145,11 +106,12 @@ int T_SDL(int mode)
   initStyle(style);
   parseForStyle(style,A);
   SDL(style, A);
-  if(mode==verbose)
-  printf("%15s %s\n",__func__, PASS );
+  if(mode==verbose){
+    printf("%15s %s\n",__func__, PASS );
+  }
   return SUCCESS;
 }
-int T_changeColor(int mode)
+int T_setColor(int mode)
 {
   FILE *fp;
   int ctrl=0x81;
@@ -158,7 +120,7 @@ int T_changeColor(int mode)
   fp=fopen(LOGNAME,"a");
   fprintf(fp, "%s\nTesting %s\n%s\n",FORMT,__func__ ,FORMT);
   while(ctrl<=0x87){
-    col=changeColor(col, ctrl++);
+    col=setColor( ctrl++);
   }
   if(mode==verbose)
   printf("%15s %s\n",__func__, PASS );
@@ -348,4 +310,37 @@ int T_parseForStyle(unsigned char **A, char *s, int mode)
     return ERROR;
   }
   return SUCCESS;
+}
+int T_decodeSixels(int mode)
+{
+  int i,j,cnt=0;
+  int dots[3][2];
+  FILE *fp;
+  int testCodeValue=0xB8;
+  fp=fopen(LOGNAME,"a");
+  fprintf(fp, "%s\nTesting %s %#X\n%s\n",FORMT,__func__,testCodeValue,FORMT );
+  decodeSixels(dots,testCodeValue);
+  if   (dots[0][0]!=0||dots[0][1]!=0||
+        dots[1][0]!=0||dots[1][1]!=1||
+        dots[1][0]!=0||dots[1][1]!=1){
+    cnt++;
+  }
+  else{
+    for(i=0;i<3;i++){
+      for(j=0;j<2;j++){
+        fprintf(fp,"%d", dots[i][j]);
+      }
+      fprintf(fp,"\n");
+    }
+    fprintf(fp, "Sixel test 0xB8 %s\n","   PASSED" );
+  }
+  if(mode==verbose &&cnt==0)
+    printf("%15s %s\n",__func__, PASS );
+  else
+    printf("%15s %s\n",__func__, FAIL );
+  if(cnt==0)
+    return SUCCESS;
+  else
+    return ERROR;
+
 }

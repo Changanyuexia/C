@@ -1,17 +1,22 @@
-#include "test.h"
+#include <stdio.h>
+#include <stdlib.h>
+#include <assert.h>
+
 #define TOT_TESTS 100
 #define SUCCESS 0
 #define ERROR   1
 #define WIDTH  40
 #define HEIGHT 25
 #define FNTFILENAME "m7fixed.fnt"
+#define TLTXTOFFSET    128
 #define FRSTCNTRLALPHA 0x81
 #define LSTCNTRLALPHA  0xAF
 #define FRSTCNTRLGRAPH 0x90
-#define LSTCNTRLGRAPH 0x9F
-#define FRSTSIXEL    160
-#define GRAPHCHARS   64
-#define SPACE_CHAR 32
+#define LSTCNTRLGRAPH  0x9F
+#define FRSTSIXEL      0xA0
+#define ONECOLUMN      16
+#define GRAPHCHARS     64
+#define SPACE_CHAR     32
 /* Font stuff */
 typedef unsigned short fntrow;
 
@@ -38,17 +43,6 @@ struct color{
   int g;
   int b;
 };
-typedef struct pallete Pallete;
-struct pallete{
-  Color red;
-  Color green;
-  Color yellow;
-  Color magenta;
-  Color cyan;
-  Color blue;
-  Color white;
-  Color black;
-};
 
 typedef struct charStyle CharStyle;
 struct charStyle{
@@ -69,13 +63,13 @@ struct tRes{
   int passed;
   int total;
 };
+
 unsigned char **fileInput(char *s);
 unsigned char **mallocArray(int height ,int width);
-
-
+void freeArray(unsigned char **A, int height);
 
 TestResults test(char *s, int mode);
-Pallete setPallete(void);
+int isSixel(int code);
 int isCntrlGraph(int code);
 int isCntrlAlhpa(int code);
 int isGraphMode(int code);
@@ -84,11 +78,11 @@ Color setColor(int clr);
 CharStyle setCoordinates(CharStyle style, int x, int y);
 void parseForStyle(CharStyle style[HEIGHT][WIDTH], unsigned char **A);
 CharStyle gmodeCheck(CharStyle style,unsigned char ctrl);
-Color changeColor(Color col, unsigned char code);
 CharHeight changeHeight(unsigned char code);
 CharStyle changeGraphStyle(CharStyle style,  unsigned char code);
 CharStyle reset(CharStyle style);
 void printArray(unsigned char **A);
 void SDL(CharStyle style[HEIGHT][WIDTH],unsigned char **A);
+void setupSDL(fntrow graphdata[2][FNTCHARS][FNTHEIGHT],fntrow fontdata[FNTCHARS][FNTHEIGHT],fntrow fontA[FNTCHARS][FNTHEIGHT]);
 /*void createGraphFont(short graphdata[GRAPHCHARS][3][2]);*/
 void decodeSixels(int dots[3][2], int i);

@@ -6,10 +6,12 @@
 #define FNTHEIGHT 18
 #define FNTWIDTH  16
 #define THRESHOLD 220
+#define FNTCHARS  96
+#define TOTALCHARFONT FNTHEIGHT*FNTCHARS*4
 
 using namespace cv;
 void string2HexBinary(unsigned char totality[10000],char totalString[10000]);
-void exportCode(unsigned char totality[10000]);
+void exportCode(unsigned char totality[TOTALCHARFONT]);
 
 
 typedef struct names FileNames;
@@ -54,11 +56,13 @@ int main( int argc, char** argv )
 
  // LOADING THE IMAGE
  FileNames names;
- unsigned char totality[10000];
+ unsigned char totality[TOTALCHARFONT];
  short unsigned font[FNTHEIGHT];
  char s[FNTHEIGHT][5];
  char totalString[10000];
-for(char c=' ';c<=126;c++){
+ int counter=0;
+for(char c=' ';counter<FNTCHARS;c++){
+  counter++;
  names=setFileNames(argv[1],c);
  Mat image,outImage;
  image = imread( names.charFile, 1 );
@@ -68,7 +72,6 @@ for(char c=' ';c<=126;c++){
  resize(image, outImage,size);
  cvtColor( outImage, outImage, CV_BGR2GRAY );
  printf("%dx%d\n",outImage.rows, outImage.cols );
-
  if( argc != 2 || !image.data )
  {
    printf( " No image data \n " );
@@ -78,7 +81,7 @@ for(int i=0; i<outImage.rows; i++) {
     if(i==0)
     printf( "    12345678901234567\n\n");
     printf("%2d  ",i );
-  for(int j=0; j<=outImage.cols; j++) {
+  for(int j=0; j<outImage.cols; j++) {
     uchar pixel = outImage.at<uchar>(i,j);
     if(pixel<THRESHOLD){
       printf("%d",1 );
@@ -94,27 +97,42 @@ for(int i=0; i<outImage.rows; i++) {
 
  for(int i=0; i<outImage.rows; i++) {
    font[i]=0;
-   for(int j=0; j<=outImage.cols; j++) {
+   for(int j=1; j<=outImage.cols; j++) {
      uchar pixel = outImage.at<uchar>(i,j);
      if(pixel<THRESHOLD)
-     font[i]+=pow(2.0,outImage.cols-j+1);
+     font[i]+=pow(2.0,outImage.cols-j);
+    //  int temporary=font[i]>>8;
+    //  font[i]=font[i]<<8;
+    //  font[i]+=temporary;
    }
   // printf("%4X--%4hu \n",font[i],font[i] );
    sprintf(s[i],"%4X",font[i]);
  //  printf("%s\n",s[i] );
   }
   for(int i=0;i<FNTHEIGHT;i++){
-    for(int j=0;j<4;j++){
+    for(int j=0;j<5;j++){
       if(s[i][j]==32){
       s[i][j]='0';
-      }
     }
-strcat(totalString,s[i]);
-printf("%2d. %s",i, s[i]);
+      char temp[4];
+      for(int k=0;k<4;k++){
+        temp[k]=s[i][k];
+      }
+      s[i][0]=temp[2];
+      s[i][1]=temp[3];
+      s[i][2]=temp[0];
+      s[i][3]=temp[1];
+
+    }
+    if(c==' ' && i==0){
+      strcpy(totalString,s[i]);
+    }
+    else{
+      strcat(totalString,s[i]);
+    }
+printf("%2d. %s   %d",i, s[i], font[i]);
 printf("\n" );
   }
-  string2HexBinary(totality,totalString);
-  exportCode(totality);
 //   int k=0;
 //   for(int i=1;i<(int)strlen(totalString);){
 //  //   printf("%x %c", totalString[i]-48,totalString[i]);
@@ -132,23 +150,32 @@ printf("\n" );
 //
 // fclose(fout);
 }
+for(int i=0;i<(int)sizeof(totalString);i++){
+    if(totalString[i]==32){
+    totalString[i]='0';
+  }
+}
+  fprintf(stderr, "%s\n",totalString );
+
+  string2HexBinary(totality,totalString);
+  exportCode(totality);
 // for(int i=1;i<96;i++)
 // totalString[i*(4)*(FNTHEIGHT)-1]='0';
 // printf("\n%s\n",totalString);
  return 0;
 }
-void exportCode(unsigned char totality[10000])
+void exportCode(unsigned char totality[TOTALCHARFONT])
 {
   FILE *fp;
   fp=fopen("trebouchet.fnt", "wb");
   assert(fp!=NULL);
-  fwrite(totality,sizeof(totality)*10000,1,fp );
+  fwrite(totality,sizeof(totality)*TOTALCHARFONT,1,fp );
   fclose(fp);
 }
-void string2HexBinary(unsigned char totality[10000],char totalString[10000]){
+void string2HexBinary(unsigned char totality[TOTALCHARFONT],char totalString[10000]){
   int i;
   char temporary[3]={0};
-  for(i=0;i<10000;i+=2){
+  for(i=0;i<=TOTALCHARFONT;i+=2){
     sprintf(temporary,"%c%c",totalString[i],totalString[i+1]);
     totality[i/2]=strtol(temporary,NULL,16);
   //  printf("%d %s %x\n",i,temporary, totality[i/2] );
