@@ -1,3 +1,4 @@
+#include "clauses.h"
 #define LOGNAME "test_log.txt"
 #define FORMT "--------------------------"
 #define FAIL "\x1B[31mFAILED\x1B[0m"

@@ -5,8 +5,7 @@
 #include "teletext.h"
 
 #define TESTFILE "test.m7"
-/*#include "neillsdl2.h"
-*/
+
 TestResults test(int mode)
 {
   FILE *fp;
@@ -106,6 +105,7 @@ int T_SDL(int mode)
   initStyle(style);
   parseForStyle(style,A);
   SDL(style, A);
+  mode=verbose;
   if(mode==verbose){
     printf("%15s %s\n",__func__, PASS );
   }
@@ -297,7 +297,7 @@ int T_parseForStyle(unsigned char **A, char *s, int mode)
   parseForStyle(style, A);
   for (i=0;i<HEIGHT;i++){
     for (j=0;j<WIDTH;j++){
-      if(FRSTCNTRLALPHA<=A[i][j]&&A[i][j]<=LSTCNTRLGRAPH)
+      if(0x80<=A[i][j]&&A[i][j]<=0x9F)
        cnt+=T_styleCases(A[i][j],style[i][j], silent);
     }
 
@@ -342,5 +342,4 @@ int T_decodeSixels(int mode)
     return SUCCESS;
   else
     return ERROR;
-
 }

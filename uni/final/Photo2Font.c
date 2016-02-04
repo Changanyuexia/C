@@ -1,3 +1,8 @@
+/*
+* This program takes as input a series of photos
+* named properly as the example "FONT" folder and makes a
+* bitmap font file named
+*/
 #include <stdio.h>
 #include <string.h>
 #include <math.h>
@@ -7,11 +12,11 @@
 #define FNTWIDTH  16
 #define THRESHOLD 220
 #define FNTCHARS  96
+#define KERNELSIZE 4
 #define TOTALCHARFONT FNTHEIGHT*FNTCHARS*4
-
+#define OUTFNTFILE "trebouchet.fnt"
 using namespace cv;
-void string2HexBinary(unsigned char totality[10000],char totalString[10000]);
-void exportCode(unsigned char totality[TOTALCHARFONT]);
+
 
 
 typedef struct names FileNames;
@@ -27,6 +32,79 @@ struct binPair{
   short unsigned int x;
   short unsigned int y;
 };
+
+FileNames setFileNames(char* argument, char c);
+void string2HexBinary(unsigned char totality[10000],char totalString[10000]);
+void exportCode(unsigned char totality[TOTALCHARFONT]);
+
+
+int main( int argc, char** argv )
+{
+  int i,j,k;
+  char temp[4];
+  FileNames names;
+  unsigned char totality[TOTALCHARFONT];
+  short unsigned font[FNTHEIGHT];
+  char s[FNTHEIGHT][5];
+  char totalString[10000];
+  int counter=0;
+  for(char c=' ';counter<FNTCHARS;c++){
+    counter++;
+    names=setFileNames(argv[1],c);
+    Mat image,outImage;
+    image = imread( names.charFile, 1 );
+    Size size(FNTWIDTH,FNTHEIGHT);
+    Size size2(KERNELSIZE,KERNELSIZE);
+    blur(image,image,size2);
+    resize(image, outImage,size);
+    /*image mode conversion RGB to GRAY*/
+    cvtColor( outImage, outImage, CV_BGR2GRAY );
+    if( argc != 2 || !image.data ){
+      printf( " No image data \n " );
+      return -1;
+    }
+    imwrite( names.outputName, outImage );
+    for(i=0; i<outImage.rows; i++) {
+      font[i]=0;
+      for(j=1; j<=outImage.cols; j++) {
+        uchar pixel = outImage.at<uchar>(i,j);
+        if(pixel<THRESHOLD){
+          font[i]+=pow(2.0,outImage.cols-j);
+        }
+      }
+      sprintf(s[i],"%4X",font[i]);
+    }
+    for(i=0;i<FNTHEIGHT;i++){
+      for(j=0;j<5;j++){
+        if(s[i][j]==32){
+          s[i][j]='0';
+        }
+        for(k=0;k<4;k++){
+          temp[k]=s[i][k];
+        }
+        s[i][0]=temp[2];
+        s[i][1]=temp[3];
+        s[i][2]=temp[0];
+        s[i][3]=temp[1];
+      }
+      if(c==' ' && i==0){
+        strcpy(totalString,s[i]);
+      }
+      else{
+        strcat(totalString,s[i]);
+      }
+    }
+  }
+  for(i=0;i<(int)sizeof(totalString);i++){
+    if(totalString[i]==32){
+      totalString[i]='0';
+    }
+  }
+  string2HexBinary(totality,totalString);
+  exportCode(totality);
+  return 0;
+}
+
 FileNames setFileNames(char* argument, char c)
 {
   FileNames names;
@@ -35,139 +113,22 @@ FileNames setFileNames(char* argument, char c)
   if('a'<= c && c <='z'){
     sprintf(names.charFile,"%s%s%c%c.jpg",names.path ,names.imageName,'m',c);
     sprintf(names.outputName,"%s%s%s%c%c.jpg",names.path , "touched",names.imageName,'m',c);
-    printf("in %s  out %s  \n",names.charFile,names.outputName );
   }
   else if('A'<= c && c <='Z'){
- sprintf(names.charFile,"%s%s%c.jpg",names.path ,names.imageName,c);
- sprintf(names.outputName,"%s%s%s%c.jpg", names.path , "touched",names.imageName,c);
-printf("in %s  out %s  \n",names.charFile,names.outputName );
+    sprintf(names.charFile,"%s%s%c.jpg",names.path ,names.imageName,c);
+    sprintf(names.outputName,"%s%s%s%c.jpg", names.path , "touched",names.imageName,c);
   }
   else{
     sprintf(names.charFile,"%s%d.jpg", names.path ,c);
     sprintf(names.outputName,"%s%s%d.jpg",names.path, "touched",c);
-   printf("in %s  out %s  \n",names.charFile,names.outputName );
   }
-
   return  names;
 }
 
-int main( int argc, char** argv )
-{
-
- // LOADING THE IMAGE
- FileNames names;
- unsigned char totality[TOTALCHARFONT];
- short unsigned font[FNTHEIGHT];
- char s[FNTHEIGHT][5];
- char totalString[10000];
- int counter=0;
-for(char c=' ';counter<FNTCHARS;c++){
-  counter++;
- names=setFileNames(argv[1],c);
- Mat image,outImage;
- image = imread( names.charFile, 1 );
- Size size(FNTWIDTH,FNTHEIGHT);
- Size size2(4,4);
- blur(image,image,size2);
- resize(image, outImage,size);
- cvtColor( outImage, outImage, CV_BGR2GRAY );
- printf("%dx%d\n",outImage.rows, outImage.cols );
- if( argc != 2 || !image.data )
- {
-   printf( " No image data \n " );
-   return -1;
- }
-for(int i=0; i<outImage.rows; i++) {
-    if(i==0)
-    printf( "    12345678901234567\n\n");
-    printf("%2d  ",i );
-  for(int j=0; j<outImage.cols; j++) {
-    uchar pixel = outImage.at<uchar>(i,j);
-    if(pixel<THRESHOLD){
-      printf("%d",1 );
-    }
-    else{
-      printf("%d",0);
-    }
-
-  }
-  printf("\n" );
-}
- imwrite( names.outputName, outImage );
-
- for(int i=0; i<outImage.rows; i++) {
-   font[i]=0;
-   for(int j=1; j<=outImage.cols; j++) {
-     uchar pixel = outImage.at<uchar>(i,j);
-     if(pixel<THRESHOLD)
-     font[i]+=pow(2.0,outImage.cols-j);
-    //  int temporary=font[i]>>8;
-    //  font[i]=font[i]<<8;
-    //  font[i]+=temporary;
-   }
-  // printf("%4X--%4hu \n",font[i],font[i] );
-   sprintf(s[i],"%4X",font[i]);
- //  printf("%s\n",s[i] );
-  }
-  for(int i=0;i<FNTHEIGHT;i++){
-    for(int j=0;j<5;j++){
-      if(s[i][j]==32){
-      s[i][j]='0';
-    }
-      char temp[4];
-      for(int k=0;k<4;k++){
-        temp[k]=s[i][k];
-      }
-      s[i][0]=temp[2];
-      s[i][1]=temp[3];
-      s[i][2]=temp[0];
-      s[i][3]=temp[1];
-
-    }
-    if(c==' ' && i==0){
-      strcpy(totalString,s[i]);
-    }
-    else{
-      strcat(totalString,s[i]);
-    }
-printf("%2d. %s   %d",i, s[i], font[i]);
-printf("\n" );
-  }
-//   int k=0;
-//   for(int i=1;i<(int)strlen(totalString);){
-//  //   printf("%x %c", totalString[i]-48,totalString[i]);
-//     t[k].x=totalString[i++]-48;
-//  //   printf("%x %c", totalString[i]-48, totalString[i]);
-//     t[k++].y=totalString[i++]-48;
-//   }
-//   FILE *fout;
-//   fout=fopen("letterA.fnt", "wb");
-//   int i=0;
-//   while(i<30){
-//   fwrite(tp++,1,1,fout );
-//   i++;
-//   }
-//
-// fclose(fout);
-}
-for(int i=0;i<(int)sizeof(totalString);i++){
-    if(totalString[i]==32){
-    totalString[i]='0';
-  }
-}
-  fprintf(stderr, "%s\n",totalString );
-
-  string2HexBinary(totality,totalString);
-  exportCode(totality);
-// for(int i=1;i<96;i++)
-// totalString[i*(4)*(FNTHEIGHT)-1]='0';
-// printf("\n%s\n",totalString);
- return 0;
-}
 void exportCode(unsigned char totality[TOTALCHARFONT])
 {
   FILE *fp;
-  fp=fopen("trebouchet.fnt", "wb");
+  fp=fopen(OUTFNTFILE, "wb");
   assert(fp!=NULL);
   fwrite(totality,sizeof(totality)*TOTALCHARFONT,1,fp );
   fclose(fp);
@@ -178,6 +139,5 @@ void string2HexBinary(unsigned char totality[TOTALCHARFONT],char totalString[100
   for(i=0;i<=TOTALCHARFONT;i+=2){
     sprintf(temporary,"%c%c",totalString[i],totalString[i+1]);
     totality[i/2]=strtol(temporary,NULL,16);
-  //  printf("%d %s %x\n",i,temporary, totality[i/2] );
   }
 }

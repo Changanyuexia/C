@@ -7,16 +7,14 @@
 #define ERROR   1
 #define WIDTH  40
 #define HEIGHT 25
-#define FNTFILENAME "m7fixed.fnt"
-#define TLTXTOFFSET    128
-#define FRSTCNTRLALPHA 0x81
-#define LSTCNTRLALPHA  0xAF
-#define FRSTCNTRLGRAPH 0x90
-#define LSTCNTRLGRAPH  0x9F
+#define FNTFILENAME "fontfiles/m7fixed.fnt"
+#define ALTFNTFNAME "fontfiles/trebouchet.fnt"
+#define TLTXTOFFSET    0x80
 #define FRSTSIXEL      0xA0
 #define ONECOLUMN      16
 #define GRAPHCHARS     64
 #define SPACE_CHAR     32
+#define BLOCK_CHAR     0xFF
 /* Font stuff */
 typedef unsigned short fntrow;
 
@@ -26,11 +24,12 @@ typedef unsigned short fntrow;
 #define FNTCHARS 96
 #define FNT1STCHAR 32
 
-enum control {red=0x81,green,yellow,blue,magenta,cyan,white,singleHeight=0x8C,doubleHeight,
+enum control {defFont=0x8A,altFont,red=0x81,green,yellow,blue,magenta,cyan,white,singleHeight=0x8C,doubleHeight,
   grRed=0x91,grGreen,grYellow,grBlue,grMagenta,grCyan,grWhite,contiguousG=0x99,separetedG,blackBack=0x9C,newBack,holdG,releaseG,black};
 
 enum sixels {s_one=1,s_two=2,s_three=4,s_four=8,s_five=16,s_six=64};
 
+enum choseFont {defaultFont,alternFont};
 enum displayMode {alpha,graph};
 enum graphMode {contiguous,separated, hold};
 
@@ -46,6 +45,7 @@ struct color{
 
 typedef struct charStyle CharStyle;
 struct charStyle{
+  enum choseFont font;
   Color background;
   Color character;
   Color graphics;
@@ -69,17 +69,11 @@ unsigned char **mallocArray(int height ,int width);
 void freeArray(unsigned char **A, int height);
 
 TestResults test(int mode);
-int isSixel(int code);
-int isCntrlGraph(int code);
-int isCntrlAlhpa(int code);
-int isGraphMode(int code);
-int isHeight(int code);
 Color setColor(int clr);
 CharStyle setCoordinates(CharStyle style, int x, int y);
 void parseForStyle(CharStyle style[HEIGHT][WIDTH], unsigned char **A);
 void asignGraphicsStyle(CharStyle *tempStyle, CharStyle style[HEIGHT][WIDTH], unsigned char **A );
-void asignAlphaStyle(CharStyle *tempStyle, CharStyle style[HEIGHT][WIDTH], unsigned char code); 
-
+void asignAlphaStyle(CharStyle *tempStyle, CharStyle style[HEIGHT][WIDTH], unsigned char code);
 void gmodeCheck(CharStyle *style,unsigned char ctrl);
 CharHeight changeHeight(unsigned char code);
 CharStyle changeGraphStyle(CharStyle style,  unsigned char code);

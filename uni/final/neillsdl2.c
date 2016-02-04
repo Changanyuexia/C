@@ -182,7 +182,7 @@ void setupSDL(fntrow graphdata[2][FNTCHARS][FNTHEIGHT],fntrow fontdata[FNTCHARS]
   createGraphFont(graphdata[contiguous], contiguous);
   createGraphFont(graphdata[separated], separated);
   Neill_SDL_ReadFont(fontdata,(char*) FNTFILENAME);
-  Neill_SDL_ReadFont(fontA,(char*)"trebouchet.fnt");
+  Neill_SDL_ReadFont(fontA,   (char*) ALTFNTFNAME);
 }
 
 void drawFrame(SDL_Simplewin *sw)
@@ -240,26 +240,7 @@ void SDL_FREE(SDL_Simplewin *sw)
   sw->win=NULL;
   SDL_Quit();
 }
-/*
-void Neill_SDL_ReadFontChar(fntrow fontdata[FNTCHARS][FNTHEIGHT], char *fname)
-{
-
-    FILE *fp = fopen(fname, "rb");
-    size_t itms;
-    if(!fp){
-       fprintf(stderr, "Can't open Font file %s\n", fname);
-       exit(1);
-   }
- itms = fread(fontdata, sizeof(fntrow), 93*FNTHEIGHT, fp);
-   if(itms != 93*FNTHEIGHT){
-       fprintf(stderr, "Can't read all Font file %s (%d) \n", fname, (int)itms);
-       exit(1);
-   }
-   fclose(fp);
-
-}
-*/
-
+/*ALTERNATIVE SIXEL PRINTING WITH SDL RECTANGLES*/
 /*
 void renderPattern(SDL_Simplewin *sw, CharStyle style , int graphdata[3][2], SDL_Rect rectSixel, SDL_Rect rectBack)
 {

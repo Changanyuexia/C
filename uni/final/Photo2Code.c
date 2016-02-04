@@ -1,3 +1,11 @@
+/*
+*  This program takes as argument
+*   1. A picture file name
+*   2. A title to put to the photo
+*   3. A colour code (integers 1-7) for the graphics
+*   4. A 1 or a 0 for separated or contiguous graphics
+*  and results to a teletext signal code file named image.m7
+*/
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -8,9 +16,10 @@
 #define FNTWIDTH  16
 #define WHEIGHT 25
 #define WWIDTH 40
-#define THRESHOLD 95
+#define THRESHOLD 90
 #define OUTPUTFILE "image.m7"
 #define BLUR_KERNELSIZE 5
+#define HEXADECIMAL  16
 
 enum sixels {s_one=1,s_two=2,s_three=4,s_four=8,s_five=16,s_six=64};
 
@@ -34,12 +43,12 @@ FileNames setFileNames(char* argument);
 int sixelAssignment(int a, int b);
 int encodeSixels(uchar dots[3][2]);
 void parseImage(char totalString[10000], Mat outImage);
-void addControlCodes(char totalString[10000]);
+void addControlCodes(char totalString[10000], int colgraph, int graphstyle );
 Mat imageProcess(Mat image, Mat middle);
 void string2HexBinary(unsigned char totality[10000],char totalString[10000]);
 void exportCode(unsigned char totality[10000]);
 int argumentCheck(int argcnt,char *arg1);
-void addTitle(char totalString[10000]);
+void addTitle(char totalString[10000],char *s);
 
 int main( int argc, char** argv )
 {
@@ -63,15 +72,15 @@ int main( int argc, char** argv )
   cvWaitKey();
   imwrite( names.outputName, outImage );
   parseImage(totalString,outImage);
-  addControlCodes(totalString);
-  addTitle(totalString);
+  addControlCodes(totalString,atoi(argv[3]),atoi(argv[4]));
+  addTitle(totalString,argv[2]);
   string2HexBinary(totality,totalString);
   exportCode(totality);
   return 0;
 }
 int argumentCheck(int argcnt, char *arg1)
 {
-  if( argcnt != 2){
+  if( argcnt != 5){
     printf( "Run $./Photo2Code with options\
      %c-h%c or %c--help%c for use \n ",'"','"','"','"' );
     return -1;
@@ -82,12 +91,18 @@ int argumentCheck(int argcnt, char *arg1)
   }
   return 0;
 }
-void addTitle(char totalString[10000])
+void addTitle(char totalString[10000],char *s)
 {
   char tot[WWIDTH];
   char temp[2*WWIDTH];
   int i=0,j;
-  strcpy(tot,"           THE BRISTOL TOWER       \0");
+  if(strlen(s)%2==0){
+    i=WWIDTH-strlen(s);
+  }
+  else{
+    i=WWIDTH-strlen(s)-1;
+  }
+  strcpy(tot,s);
   for (j=0;j<(int)strlen(tot);j++){
     sprintf(temp,"%2x",tot[j]);
     totalString[i++]=temp[0];
@@ -117,11 +132,11 @@ void string2HexBinary(unsigned char totality[10000],char totalString[10000]){
   char temporary[3]={0};
   for(i=0;i<10000;i+=2){
     sprintf(temporary,"%c%c",totalString[i],totalString[i+1]);
-    totality[i/2]=strtol(temporary,NULL,16);
+    totality[i/2]=strtol(temporary,NULL,HEXADECIMAL);
   //  printf("%d %s %x\n",i,temporary, totality[i/2] );
   }
 }
-void addControlCodes(char totalString[10000])
+void addControlCodes(char totalString[10000], int colgraph, int graphstyle )
 {
   int i;
   for(i=0;i<10000;i++){
@@ -132,7 +147,11 @@ void addControlCodes(char totalString[10000])
     /*adding the white graphics control code to every line
     with 0x97 being the control code for white graphics*/
     totalString[i]='9';
-    totalString[i+1]='7';
+    totalString[i+1]=colgraph+48;
+    if(graphstyle==1){
+      totalString[i+2]='9';
+      totalString[i+3]='A';
+    }
   }
 }
 printf("%s\n",totalString );
